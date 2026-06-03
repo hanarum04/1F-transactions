@@ -199,21 +199,22 @@
   /* ══ Profile creation modal ══ */
   .pmodal { width: 1040px; max-width: 98vw; max-height: 92vh; }
 
-  /* 3-step header bar */
-  .pstep-bar { display: flex; align-items: stretch; padding: 0 24px; border-bottom: 1px solid #e5e7eb; gap: 0; background: #fff; flex-shrink: 0; }
-  .pstep { display: flex; align-items: flex-start; gap: 12px; padding: 16px 24px 14px 0; flex: 1; position: relative; }
-  .pstep + .pstep::before { content: ''; position: absolute; left: 0; top: 28px; width: 100%; height: 1px; background: #e5e7eb; z-index: 0; pointer-events: none; }
-  .pstep-line { position: absolute; left: 0; top: 27px; height: 2px; background: #16a34a; transition: width .3s; z-index: 1; }
-  .pstep-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; z-index: 2; }
+  /* 3-step header bar — steps + connector lines as explicit flex children */
+  .pstep-bar { display: flex; align-items: flex-start; padding: 18px 28px 14px; border-bottom: 1px solid #e5e7eb; background: #fff; flex-shrink: 0; gap: 0; }
+  .pstep { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+  .pstep-connector { flex: 1; height: 2px; margin-top: 13px; min-width: 24px; }
+  .pstep-connector.done    { background: #16a34a; }
+  .pstep-connector.pending { background: #e5e7eb; }
+  .pstep-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
   .psn-pending { border: 1.5px solid #d1d5db; color: #9ca3af; background: #fff; }
   .psn-active  { border: 2px solid #1d4ed8; color: #fff; background: #1d4ed8; }
-  .psn-done    { border: 2px solid #16a34a; color: #16a34a; background: #f0fdf4; font-size: 14px; }
-  .pstep-info { z-index: 2; }
-  .pstep-label { font-size: 13px; font-weight: 600; }
+  .psn-done    { border: 2px solid #16a34a; color: #16a34a; background: #f0fdf4; }
+  .pstep-info  { padding-top: 2px; min-width: 0; }
+  .pstep-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
   .psl-pending { color: #9ca3af; }
   .psl-active  { color: #1d4ed8; }
   .psl-done    { color: #374151; }
-  .pstep-sub   { font-size: 11px; color: #9ca3af; margin-top: 1px; line-height: 1.4; max-width: 200px; }
+  .pstep-sub   { font-size: 11px; color: #9ca3af; margin-top: 2px; line-height: 1.4; }
 
   /* Two-panel layout for step 2 */
   .schema-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
@@ -902,15 +903,22 @@ function buildPStepper() {
   ];
   let h = '';
   steps.forEach((s, i) => {
-    const cls = s.n < pStep ? 'done' : s.n === pStep ? 'active' : 'pending';
-    h += `<div class="pstep" style="position:relative;">`;
-    if (i > 0) h += `<div style="position:absolute;left:0;top:27px;right:0;height:2px;background:#e5e7eb;z-index:0;"></div>`;
-    if (s.n < pStep) h += `<div style="position:absolute;left:0;top:26px;right:0;height:2px;background:#16a34a;z-index:1;"></div>`;
-    h += `<div class="pstep-num psn-${cls}" style="z-index:2;">${cls==='done'?'✓':s.n}</div>
-    <div class="pstep-info" style="z-index:2;">
-      <div class="pstep-label psl-${cls}">${s.label}</div>
-      <div class="pstep-sub">${s.sub}</div>
-    </div></div>`;
+    const cls  = s.n < pStep ? 'done' : s.n === pStep ? 'active' : 'pending';
+    const icon = cls === 'done'
+      ? `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>`
+      : s.n;
+    // Connector before this step (except the first)
+    if (i > 0) {
+      const connCls = s.n <= pStep ? 'done' : 'pending';
+      h += `<div class="pstep-connector ${connCls}"></div>`;
+    }
+    h += `<div class="pstep">
+      <div class="pstep-num psn-${cls}">${icon}</div>
+      <div class="pstep-info">
+        <div class="pstep-label psl-${cls}">${s.label}</div>
+        <div class="pstep-sub">${s.sub}</div>
+      </div>
+    </div>`;
   });
   return h;
 }
