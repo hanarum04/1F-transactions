@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Read(//opt/homebrew/Cellar/node/26.0.0/bin/**)",
+      "Read(//opt/homebrew/opt/**)",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}

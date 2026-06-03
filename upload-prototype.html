@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Finance – AI-Assisted Upload Prototype</title>
+<!-- SheetJS for real xlsx parsing -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; font-size: 13px; color: #111827; background: #f9fafb; line-height: 1.5; }
+
+  /* ── App shell ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 208px; background: #fff; border-right: 1px solid #e5e7eb; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar-logo { padding: 14px 16px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #f3f4f6; }
+  .sidebar-section { padding: 16px 16px 4px; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .6px; }
+  .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 16px; cursor: pointer; color: #374151; font-size: 13px; }
+  .sidebar-item:hover { background: #f9fafb; }
+  .sidebar-item.active { background: #eff6ff; color: #1d4ed8; }
+  .sidebar-item svg { flex-shrink: 0; opacity: .65; }
+  .sidebar-item.active svg { opacity: 1; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .topbar { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 24px; height: 46px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-brand { font-weight: 700; font-size: 14px; }
+  .topbar-nav { display: flex; }
+  .topbar-nav a { padding: 0 12px; height: 46px; display: flex; align-items: center; font-size: 13px; color: #6b7280; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; gap: 5px; }
+  .topbar-nav a.active { color: #1d4ed8; border-bottom-color: #1d4ed8; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; color: #6b7280; font-size: 13px; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: #dc2626; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; }
+  .content { flex: 1; overflow: auto; padding: 24px 28px; }
+  .breadcrumb { font-size: 12px; color: #6b7280; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .breadcrumb span { color: #111827; font-weight: 500; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #e5e7eb; background: #fff; color: #374151; font-family: inherit; white-space: nowrap; }
+  .btn:hover { background: #f9fafb; }
+  .btn-primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-primary:disabled { background: #93c5fd; border-color: #93c5fd; cursor: not-allowed; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-row { display: flex; gap: 8px; }
+
+  /* ── Cards ── */
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .card-header { padding: 11px 16px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; }
+  .card-header-left { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: #374151; }
+  .card-body { padding: 16px; color: #6b7280; font-size: 13px; }
+  .table-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  .table-bar input { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; font-size: 12px; width: 180px; color: #374151; outline: none; background: #f9fafb; }
+  .icon-row { display: flex; gap: 4px; align-items: center; }
+  .icon-btn { width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b7280; }
+  .icon-btn:hover { background: #f9fafb; }
+  .upload-icon-btn { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; font-size: 12px; color: #374151; }
+  .upload-icon-btn:hover { background: #f9fafb; }
+
+  /* Summary table */
+  .stbl { width: 100%; border-collapse: collapse; }
+  .stbl th { padding: 8px 14px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; background: #fafafa; }
+  .stbl th:last-child { border-right: none; }
+  .stbl td { padding: 8px 14px; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #e5e7eb; color: #111827; font-size: 13px; text-align: left; }
+  .stbl td:last-child { border-right: none; }
+  .stbl tr:last-child td { border-bottom: none; }
+  .stbl tr:hover td { background: #fafafa; }
+
+  /* ── Modal ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; align-items: center; justify-content: center; }
+  .overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 10px; width: 900px; max-width: 97vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 8px 48px rgba(0,0,0,.16); overflow: hidden; }
+  .modal-header { padding: 15px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .modal-title { font-size: 15px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+  .modal-close:hover { background: #f3f4f6; color: #374151; }
+  .modal-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; }
+  .modal-footer { padding: 12px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+
+  /* ── Stepper ── */
+  .stepper { display: flex; align-items: flex-start; margin-bottom: 24px; }
+  .step { display: flex; align-items: flex-start; gap: 7px; }
+  .step-circle { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .sc-pending { border: 1.5px solid #d1d5db; color: #9ca3af; background: #fff; }
+  .sc-active  { border: 1.5px solid #1d4ed8; color: #1d4ed8; background: #eff6ff; }
+  .sc-done    { border: 1.5px solid #16a34a; color: #16a34a; background: #f0fdf4; }
+  .step-label { font-size: 12px; font-weight: 600; }
+  .sl-pending { color: #9ca3af; }
+  .sl-active  { color: #1d4ed8; }
+  .sl-done    { color: #374151; }
+  .step-sub { font-size: 11px; color: #9ca3af; }
+  .step-line { flex: 1; height: 1px; background: #e5e7eb; margin: 11px 8px 0; }
+  .step-line.done { background: #16a34a; }
+
+  /* ── Upload zone ── */
+  .upload-zone { border: 1.5px dashed #d1d5db; border-radius: 8px; padding: 44px 24px; text-align: center; cursor: pointer; display: block; width: 100%; transition: border-color .15s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #1d4ed8; background: #f8faff; }
+  .upload-zone input { display: none; }
+  .upload-zone-icon { margin-bottom: 12px; color: #d1d5db; display: flex; justify-content: center; }
+  .upload-zone-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+  .upload-zone-sub { font-size: 12px; color: #9ca3af; }
+  .file-selected { margin-top: 12px; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+
+  /* ── Spinner ── */
+  .spinner-wrap { text-align: center; padding: 56px 20px; }
+  .spinner { width: 32px; height: 32px; border: 2.5px solid #e5e7eb; border-top-color: #1d4ed8; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Pills & badges ── */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .pill-yellow { background: #fefce8; color: #854d0e; }
+  .pill-red    { background: #fef2f2; color: #991b1b; }
+  .pill-green  { background: #f0fdf4; color: #166534; }
+
+  /* ── Info bar ── */
+  .info-bar { display: flex; gap: 10px; padding: 10px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; margin-bottom: 16px; font-size: 13px; color: #1e40af; flex-wrap: wrap; }
+
+  /* ── Schema section ── */
+  .schema-section { margin-bottom: 16px; }
+  .schema-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 12px; font-weight: 600; color: #374151; user-select: none; }
+  .schema-toggle:hover { background: #f3f4f6; }
+  .schema-body { padding: 12px 0 0; display: none; }
+  .schema-body.open { display: block; }
+  .sh { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .check-row { display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+  .ind { width: 4px; border-radius: 2px; flex-shrink: 0; align-self: stretch; }
+  .ind-red { background: #ef4444; } .ind-yellow { background: #f59e0b; } .ind-green { background: #22c55e; }
+  .check-col { font-weight: 600; font-size: 13px; margin-bottom: 3px; display: flex; align-items: center; gap: 6px; }
+  .check-detail { font-size: 12px; color: #6b7280; line-height: 1.6; }
+  .check-detail .err { color: #991b1b; font-weight: 500; }
+  .check-detail .ok  { color: #166534; font-weight: 500; }
+
+  /* ── Review & edit grid ── */
+  .grid-outer { position: relative; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  .grid-scroll { overflow: auto; max-height: 380px; }
+
+  .grid-tbl { border-collapse: collapse; font-size: 12px; }
+  /* Headers sticky top */
+  .grid-tbl thead th { position: sticky; top: 0; z-index: 3; background: #f9fafb; padding: 8px 14px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; text-align: right; white-space: nowrap; }
+  .grid-tbl thead th:first-child { text-align: center; width: 48px; }
+  /* Notes column: sticky top AND sticky right */
+  .grid-tbl thead th.col-notes { position: sticky; top: 0; right: 0; z-index: 4; text-align: left; background: #f3f4f6; border-right: none; border-left: 2px solid #e5e7eb; min-width: 220px; max-width: 280px; }
+
+  .grid-tbl tbody td { padding: 0; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #e5e7eb; vertical-align: middle; height: 38px; }
+  .grid-tbl tbody tr:last-child td { border-bottom: none; }
+  .grid-tbl tbody tr:hover td { background: #fafafa; }
+  /* Notes column sticky right */
+  .grid-tbl tbody td.col-notes { position: sticky; right: 0; background: #fafafa; border-right: none; border-left: 2px solid #e5e7eb; padding: 6px 12px; vertical-align: top; height: auto; min-height: 38px; }
+  .grid-tbl tbody tr:hover td.col-notes { background: #f3f4f6; }
+
+  /* Row number */
+  .grid-rn { text-align: center; color: #9ca3af; font-size: 11px; padding: 0 10px; font-variant-numeric: tabular-nums; }
+
+  /* Read-only ok cell */
+  .cell-ok { padding: 8px 14px; text-align: left; font-family: monospace; font-size: 12px; color: #374151; display: flex; align-items: center; justify-content: flex-end; height: 100%; }
+  .cell-empty { color: #d1d5db; font-style: italic; justify-content: flex-end; }
+
+  /* AI corrected cell (editable via pencil) */
+  .cell-corrected { padding: 6px 14px; display: flex; align-items: center; gap: 5px; height: 100%; justify-content: flex-end; }
+  .cell-pencil { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 2px; border-radius: 3px; display: flex; align-items: center; flex-shrink: 0; }
+  .cell-pencil:hover { color: #374151; background: #e5e7eb; }
+
+  /* Needs-input cell */
+  .cell-need-wrap { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+  .cell-input { display: block; width: 100%; height: 100%; min-height: 38px; padding: 8px 14px; border: none; outline: none; font-family: monospace; font-size: 12px; color: #111827; background: #fffbeb; border-left: 2px solid #f59e0b; }
+  .cell-input:focus { background: #fefce8; border-left-color: #1d4ed8; }
+  .cell-input.has-error { background: #fef2f2; border-left-color: #ef4444; }
+  .cell-err-tip { display: none; position: absolute; bottom: calc(100% + 4px); left: 14px; background: #1f2937; color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 4px; white-space: nowrap; z-index: 20; pointer-events: none; }
+  .cell-err-tip::after { content: ''; position: absolute; top: 100%; left: 12px; border: 4px solid transparent; border-top-color: #1f2937; }
+  .cell-input.has-error:focus ~ .cell-err-tip { display: block; }
+
+  /* Notes in sticky column */
+  .note-line { font-size: 11px; color: #6b7280; line-height: 1.5; display: flex; gap: 5px; align-items: flex-start; margin-bottom: 2px; }
+  .note-line:last-child { margin-bottom: 0; }
+  .note-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .nd-red { background: #ef4444; } .nd-yellow { background: #f59e0b; }
+
+  /* Value display helpers */
+  code { font-family: monospace; font-size: 11px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
+  .val-del { background: #fef2f2; color: #991b1b; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 11px; text-decoration: line-through; }
+  .val-add { background: #f0fdf4; color: #166534; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 11px; }
+  .val-arrow { color: #d1d5db; font-size: 11px; }
+  .val-need { background: #fefce8; color: #854d0e; border-radius: 3px; padding: 1px 5px; font-family: monospace; font-size: 11px; text-decoration: line-through; }
+
+  /* Scroll indicator */
+  .scroll-ind { display: none; position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; }
+  .scroll-ind.visible { display: block; }
+  .scroll-ind-inner { background: linear-gradient(transparent, rgba(255,255,255,.95)); padding: 18px 0 8px; display: flex; justify-content: center; }
+  .scroll-arr { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #6b7280; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 3px 10px; pointer-events: auto; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .scroll-arr:hover { background: #f9fafb; }
+
+  /* ── Success ── */
+  .success-wrap { text-align: center; padding: 48px 20px; }
+  .success-ring { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .success-summary { margin: 20px auto 0; display: inline-block; text-align: left; padding: 14px 20px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #374151; line-height: 2.2; }
+
+  .hidden { display: none !important; }
+  .divider { height: 1px; background: #f3f4f6; margin: 16px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">One Finance</div>
+    <div class="sidebar-section">Data</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>Journal Entry</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Operational Report</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>Metadata</div>
+    <div class="sidebar-section">Record</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Master Data</div>
+    <div class="sidebar-item active"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>Profile</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>Transaction</div>
+    <div class="sidebar-item"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>Parameter</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-brand">One Finance</div>
+      <nav class="topbar-nav">
+        <a href="#">Activities</a>
+        <a href="#" class="active">Data</a>
+        <a href="#">Documents</a>
+        <a href="#">Developers</a>
+        <a href="#">Access</a>
+      </nav>
+      <div class="topbar-right">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <div class="avatar">H</div>
+        <span style="color:#374151;">Hanarum Kamalinda</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="breadcrumb">Record <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg><span>Profile</span></div>
+      <div class="page-header">
+        <div class="page-title">DE Test NUMBER and DECIMALS <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+        <div class="btn-row"><button class="btn btn-sm">Favorite</button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M14.828 14.828a4 4 0 015.656 0l-4 4a4 4 0 01-5.656-5.656l1.1-1.1"/></svg></button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2"/></svg></button><button class="btn btn-primary btn-sm" onclick="openModal()">+ Profile</button></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-header-left"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>Description <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div></div>
+        <div class="card-body">testing, in numbers and decimals</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-header-left"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>Summary</div></div>
+        <div class="table-bar">
+          <input type="text" placeholder="Please enter">
+          <div class="icon-row">
+            <button class="icon-btn"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            <button class="upload-icon-btn" onclick="openModal()"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Upload</button>
+            <button class="icon-btn"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg></button>
+            <button class="icon-btn"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></button>
+            <button class="icon-btn"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg></button>
+            <button class="icon-btn"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <table class="stbl">
+          <thead><tr><th>number</th><th>decimal</th></tr></thead>
+          <tbody>
+            <tr><td>1234</td><td>1443.98</td></tr>
+            <tr><td>15000</td><td>122.25</td></tr>
+            <tr><td>9999999</td><td>3654.12</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Upload Profile Data</div><button class="modal-close" onclick="closeModal()">&#x2715;</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   SCHEMA  (defined per-profile, fixed for this prototype)
+═══════════════════════════════════════════════════ */
+const SCHEMA = {
+  number:  { type: 'integer',  required: true,  label: 'INTEGER · Required'  },
+  decimal: { type: 'decimal2', required: false, label: 'DECIMAL(2) · Optional' },
+};
+
+// Returns null if valid, error string if not
+const TYPE_CHECK = {
+  integer:  v => /^\s*-?\d+\s*$/.test(String(v)) ? null : 'Must be a whole number (e.g. 42)',
+  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(String(v)) ? null : 'Must be a number with up to 2 decimal places (e.g. 10.00)',
+};
+
+// Auto-format if value is valid but not yet in the right format
+function autoFormat(col, rawVal) {
+  if (rawVal === null || rawVal === undefined || rawVal === '') return null;
+  const s = String(rawVal).trim();
+  if (SCHEMA[col].type === 'decimal2') {
+    const n = parseFloat(s);
+    if (!isNaN(n)) {
+      const formatted = n.toFixed(2);
+      return formatted !== s ? formatted : null; // return formatted if different
+    }
+  }
+  return null;
+}
+
+/* ══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let step = 'upload';
+let parsedColumns = [];  // ['number','decimal',...]
+let parsedRows = [];     // [{number:'3', decimal:null}, ...]
+let issues = [];         // computed from parsedRows + SCHEMA
+let userOverrides = {};  // { 'row-col': newValue }
+
+/* ══════════════════════════════════════════════════
+   FILE PARSING (SheetJS)
+═══════════════════════════════════════════════════ */
+function parseXlsx(file, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+    if (raw.length < 1) { cb([], []); return; }
+    const headers = raw[0].map(h => h === null ? '' : String(h).trim());
+    const rows = raw.slice(1).map(r =>
+      Object.fromEntries(headers.map((h, i) => [h, r[i] === undefined ? null : r[i]]))
+    );
+    cb(headers, rows);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ══════════════════════════════════════════════════
+   AI ANALYSIS ENGINE
+═══════════════════════════════════════════════════ */
+function analyzeData(columns, rows) {
+  const found = [];
+  rows.forEach((row, ri) => {
+    const rowNum = ri + 1;
+    columns.forEach(col => {
+      if (!SCHEMA[col]) return; // unknown column, skip
+      const raw = row[col];
+      const isEmpty = raw === null || raw === undefined || raw === '';
+
+      if (isEmpty) {
+        if (SCHEMA[col].required) {
+          found.push({ row: rowNum, col, original: null, fixed: null, canFix: false, reason: 'Required field is empty — intended value is unknown.' });
+        }
+        // optional + empty = fine, no issue
+        return;
+      }
+
+      const s = String(raw).trim();
+      const typeErr = TYPE_CHECK[SCHEMA[col].type] ? TYPE_CHECK[SCHEMA[col].type](s) : null;
+      if (typeErr) {
+        found.push({ row: rowNum, col, original: raw, fixed: null, canFix: false, reason: `Text value in a ${SCHEMA[col].type === 'integer' ? 'number' : 'decimal'} column — cannot determine the intended value.` });
+        return;
+      }
+
+      // Valid type — check if auto-formatting needed
+      const formatted = autoFormat(col, raw);
+      if (formatted !== null) {
+        found.push({ row: rowNum, col, original: raw, fixed: formatted, canFix: true, reason: `Formatted to 2 decimal places per schema.` });
+      }
+    });
+  });
+  return found;
+}
+
+/* ══════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════ */
+function openModal() { step = 'upload'; userOverrides = {}; document.getElementById('modal').classList.add('open'); render(); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function goStep(s) { step = s; render(); }
+function fmt(b) { if (b < 1024) return b+'B'; if (b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
+
+/* ══════════════════════════════════════════════════
+   RENDER DISPATCHER
+═══════════════════════════════════════════════════ */
+function render() {
+  const body = document.getElementById('modal-body');
+  const foot = document.getElementById('modal-footer');
+  body.innerHTML = foot.innerHTML = '';
+  body.insertAdjacentHTML('beforeend', buildStepper());
+  ({ upload, analyzing, review, success }[step] || (()=>{}))(body, foot);
+}
+
+function buildStepper() {
+  const defs = [
+    { key:'upload',  label:'Upload',         sub:'Select file'     },
+    { key:'review',  label:'AI Review',       sub:'Review & edit'   },
+    { key:'success', label:'Submit',           sub:'Complete upload' },
+  ];
+  const order = ['upload','analyzing','review','success'];
+  const cur = order.indexOf(step);
+  let h = '<div class="stepper">';
+  defs.forEach((d, i) => {
+    const rank = order.indexOf(d.key);
+    const cls = rank < cur ? 'done' : (rank === cur || (d.key==='review' && step==='analyzing')) ? 'active' : 'pending';
+    if (i > 0) h += `<div class="step-line ${rank <= cur ? 'done':''}"></div>`;
+    h += `<div class="step"><div class="step-circle sc-${cls}">${cls==='done'?'✓':i+1}</div><div><div class="step-label sl-${cls}">${d.label}</div><div class="step-sub">${d.sub}</div></div></div>`;
+  });
+  return h + '</div>';
+}
+
+/* ══════════════════════════════════════════════════
+   STEP: UPLOAD
+═══════════════════════════════════════════════════ */
+let _pendingFile = null;
+
+function upload(body, foot) {
+  body.insertAdjacentHTML('beforeend', `
+    <div style="text-align:center;margin-bottom:14px;">
+      <a href="#" style="font-size:12px;color:#1d4ed8;display:inline-flex;align-items:center;gap:5px;text-decoration:none;"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Download Template</a>
+    </div>
+    <label class="upload-zone" id="dz">
+      <input type="file" accept=".csv,.xls,.xlsx" onchange="fileChosen(this)">
+      <div class="upload-zone-icon"><svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg></div>
+      <div class="upload-zone-title">Upload file</div>
+      <div class="upload-zone-sub">Drag and drop or click to upload<br>Accepts CSV, XLS, XLSX files. No file size limit.</div>
+    </label>
+    <div class="file-selected hidden" id="file-info">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:#6b7280;flex-shrink:0"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      <div style="flex:1;"><div style="font-weight:500;font-size:13px;" id="fn"></div><div style="font-size:11px;color:#9ca3af;" id="fs"></div></div>
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#16a34a"><path d="M5 13l4 4L19 7"/></svg>
+    </div>
+  `);
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Analyse with AI</button>
+  `);
+  const dz = document.getElementById('dz');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if (e.dataTransfer.files[0]) fileChosen({ files: e.dataTransfer.files }); });
+}
+
+function fileChosen(inp) {
+  const f = inp.files && inp.files[0];
+  if (!f) return;
+  _pendingFile = f;
+  document.getElementById('file-info').classList.remove('hidden');
+  document.getElementById('fn').textContent = f.name;
+  document.getElementById('fs').textContent = fmt(f.size);
+  document.getElementById('next-btn').disabled = false;
+}
+
+/* ══════════════════════════════════════════════════
+   STEP: ANALYZING
+═══════════════════════════════════════════════════ */
+function startAnalysis() {
+  goStep('analyzing');
+  if (_pendingFile) {
+    parseXlsx(_pendingFile, (cols, rows) => {
+      parsedColumns = cols;
+      parsedRows = rows;
+      issues = analyzeData(cols, rows);
+      goStep('review');
+    });
+  } else {
+    setTimeout(() => goStep('review'), 1800);
+  }
+}
+
+function analyzing(body, foot) {
+  body.insertAdjacentHTML('beforeend', `
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Reviewing your file…</div>
+      <div style="font-size:12px;color:#6b7280;">Checking column types and data formats against your schema.</div>
+    </div>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Analyse with AI</button>`);
+}
+
+/* ══════════════════════════════════════════════════
+   STEP: REVIEW & EDIT  (merged AI Review + Confirm)
+═══════════════════════════════════════════════════ */
+function review(body, foot) {
+  const auto = issues.filter(x => x.canFix);
+  const manual = issues.filter(x => !x.canFix);
+
+  body.insertAdjacentHTML('beforeend', `
+    <div class="info-bar">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>AI found <strong>${issues.length} issue(s)</strong> across <strong>${parsedRows.length} row(s)</strong>.
+        <span class="pill pill-green" style="margin-left:4px;">${auto.length} auto-corrected</span>
+        <span class="pill pill-red" style="margin-left:4px;">${manual.length} need your input</span>
+      </span>
+    </div>
+
+    ${buildSchemaSection()}
+
+    <div class="sh" style="margin-bottom:8px;">Review & edit data</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+      Yellow cells need your input. AI-corrected cells show before &rarr; after — click
+      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      to override. Notes column stays visible as you scroll.
+    </div>
+    ${buildGrid()}
+  `);
+
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="goStep('upload')">Back</button>
+    <button class="btn btn-primary" onclick="doSubmit()">Confirm and Submit</button>
+  `);
+
+  initScrollIndicator();
+}
+
+/* ── Schema collapsible ── */
+function buildSchemaSection() {
+  const cols = parsedColumns.filter(c => SCHEMA[c]);
+  if (!cols.length) return '';
+
+  let rows = '';
+  cols.forEach(col => {
+    const colIssues = issues.filter(x => x.col === col);
+    const hasManual = colIssues.some(x => !x.canFix);
+    const hasAuto   = colIssues.some(x => x.canFix);
+    const indCls = !colIssues.length ? 'ind-green' : hasManual ? 'ind-red' : 'ind-yellow';
+    const pillCls = !colIssues.length ? 'pill-green' : hasManual ? 'pill-red' : 'pill-yellow';
+
+    let detail = '';
+    if (!colIssues.length) {
+      detail = `All values are valid.`;
+    } else {
+      const manualRows = colIssues.filter(x=>!x.canFix).map(x=>x.row);
+      const autoRows   = colIssues.filter(x=>x.canFix).map(x=>x.row);
+      if (manualRows.length) detail += `<span class="err">Row(s) ${manualRows.join(', ')}</span> have invalid or empty values — your input is required.<br>`;
+      if (autoRows.length)   detail += `Row(s) ${autoRows.join(', ')} <span class="ok">auto-corrected by AI</span>.`;
+    }
+
+    rows += `<div class="check-row">
+      <div class="ind ${indCls}"></div>
+      <div>
+        <div class="check-col">${col} <span class="pill ${pillCls}">${SCHEMA[col].label}</span></div>
+        <div class="check-detail">${detail}</div>
+      </div>
+    </div>`;
+  });
+
+  return `
+    <div class="schema-section">
+      <div class="schema-toggle" onclick="toggleSchema(this)">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
+        Schema check — ${parsedColumns.filter(c=>SCHEMA[c]).length} column(s) analysed
+      </div>
+      <div class="schema-body" id="schema-body">${rows}</div>
+    </div>`;
+}
+
+function toggleSchema(el) {
+  const body = document.getElementById('schema-body');
+  const chev = document.getElementById('schema-chevron');
+  const open = body.classList.toggle('open');
+  chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+/* ── Review grid ── */
+function buildGrid() {
+  if (!parsedColumns.length) return '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:24px;">No data to display.</div>';
+
+  const dataCols = parsedColumns; // all columns from file
+
+  let headerCells = '<th>#</th>';
+  dataCols.forEach(col => { headerCells += `<th>${col}</th>`; });
+  headerCells += '<th class="col-notes">Notes</th>';
+
+  let bodyRows = '';
+  parsedRows.forEach((row, ri) => {
+    const rn = ri + 1;
+    const rowIssues = issues.filter(x => x.row === rn);
+    let cells = `<td class="grid-rn">${rn}</td>`;
+
+    dataCols.forEach(col => {
+      const issue = rowIssues.find(x => x.col === col);
+      const key = `${rn}-${col}`;
+      cells += '<td>';
+      if (!issue) {
+        const v = row[col];
+        if (v === null || v === undefined || v === '') {
+          cells += '<div class="cell-ok cell-empty">—</div>';
+        } else {
+          cells += `<div class="cell-ok">${v}</div>`;
+        }
+      } else if (issue.canFix) {
+        // AI-corrected: show before→after with pencil to override
+        const overrideVal = userOverrides[key];
+        if (overrideVal !== undefined) {
+          // User already overrode — show as editable input
+          cells += buildEditableCell(rn, col, issue, overrideVal);
+        } else {
+          cells += `<div class="cell-corrected">
+            <span class="val-del" style="font-size:11px;">${issue.original}</span>
+            <span class="val-arrow">→</span>
+            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
+            <button class="cell-pencil" title="Edit AI correction" onclick="overrideCell(${rn},'${col}',event)">
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+          </div>`;
+        }
+      } else {
+        cells += buildEditableCell(rn, col, issue, '');
+      }
+      cells += '</td>';
+    });
+
+    // Notes (sticky right)
+    let notes = '';
+    rowIssues.forEach(iss => {
+      const dotCls = iss.canFix ? 'nd-yellow' : 'nd-red';
+      notes += `<div class="note-line"><div class="note-dot ${dotCls}"></div><span><strong>${iss.col}:</strong> ${iss.reason}</span></div>`;
+    });
+    if (!notes) notes = '';
+
+    cells += `<td class="col-notes">${notes}</td>`;
+    bodyRows += `<tr>${cells}</tr>`;
+  });
+
+  return `
+    <div class="grid-outer" id="grid-outer">
+      <div class="grid-scroll" id="grid-scroll">
+        <table class="grid-tbl">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      <div class="scroll-ind" id="scroll-ind">
+        <div class="scroll-ind-inner">
+          <div class="scroll-arr" onclick="document.getElementById('grid-scroll').scrollBy({top:100,behavior:'smooth'})">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            More rows below
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildEditableCell(rn, col, issue, currentVal) {
+  const orig = (issue.original === null || issue.original === '') ? '' : issue.original;
+  const placeholder = orig ? `Was: ${orig}` : 'Enter value…';
+  return `<div class="cell-need-wrap">
+    <input type="text" class="cell-input" id="e-${rn}-${col}"
+      value="${currentVal}"
+      placeholder="${placeholder}"
+      data-row="${rn}" data-col="${col}"
+      oninput="validateCell(this)" onblur="validateCell(this)">
+    <div class="cell-err-tip" id="err-${rn}-${col}"></div>
+  </div>`;
+}
+
+function overrideCell(row, col, evt) {
+  evt.stopPropagation();
+  const issue = issues.find(x => x.row === row && x.col === col);
+  if (!issue) return;
+  userOverrides[`${row}-${col}`] = issue.fixed; // seed with AI value
+  // Re-render just the review step body (keep footer)
+  const body = document.getElementById('modal-body');
+  const foot = document.getElementById('modal-footer');
+  body.innerHTML = '';
+  body.insertAdjacentHTML('beforeend', buildStepper());
+  review(body, { insertAdjacentHTML: () => {} }); // body only
+  // re-focus the newly created input
+  setTimeout(() => {
+    const inp = document.getElementById(`e-${row}-${col}`);
+    if (inp) { inp.select(); inp.focus(); }
+  }, 30);
+}
+
+/* ── Validators ── */
+const INPUT_VALIDATORS = {
+  integer:  v => /^\s*-?\d+\s*$/.test(v)              ? null : 'Must be a whole number (e.g. 42)',
+  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(v) ? null : 'Must be a number with up to 2 decimal places',
+};
+
+function validateCell(inp) {
+  const row = inp.dataset.row;
+  const col = inp.dataset.col;
+  const val = inp.value.trim();
+  const errEl = document.getElementById(`err-${row}-${col}`);
+  if (!val) {
+    inp.classList.remove('has-error');
+    if (errEl) errEl.textContent = '';
+    return;
+  }
+  const schemaType = SCHEMA[col] ? SCHEMA[col].type : null;
+  const msg = schemaType && INPUT_VALIDATORS[schemaType] ? INPUT_VALIDATORS[schemaType](val) : null;
+  if (msg) {
+    inp.classList.add('has-error');
+    if (errEl) errEl.textContent = msg;
+  } else {
+    inp.classList.remove('has-error');
+    if (errEl) errEl.textContent = '';
+    userOverrides[`${row}-${col}`] = val;
+  }
+}
+
+/* ── Scroll indicator ── */
+function initScrollIndicator() {
+  setTimeout(() => {
+    const scr = document.getElementById('grid-scroll');
+    const ind = document.getElementById('scroll-ind');
+    if (!scr || !ind) return;
+    const update = () => ind.classList.toggle('visible', scr.scrollHeight > scr.clientHeight + scr.scrollTop + 4);
+    update();
+    scr.addEventListener('scroll', update);
+  }, 60);
+}
+
+/* ── Submit ── */
+function doSubmit() {
+  let hasError = false;
+  // Validate all manual-input fields
+  issues.filter(x => !x.canFix).forEach(c => {
+    const inp = document.getElementById(`e-${c.row}-${c.col}`);
+    if (!inp) return;
+    validateCell(inp);
+    if (inp.classList.contains('has-error')) { hasError = true; return; }
+    if (!inp.value.trim()) {
+      inp.classList.add('has-error');
+      const errEl = document.getElementById(`err-${c.row}-${c.col}`);
+      if (errEl) errEl.textContent = 'This field is required.';
+      hasError = true;
+    }
+  });
+  if (hasError) {
+    // scroll to first error
+    const firstErr = document.querySelector('.cell-input.has-error');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  goStep('success');
+}
+
+/* ══════════════════════════════════════════════════
+   STEP: SUCCESS
+═══════════════════════════════════════════════════ */
+function success(body, foot) {
+  const auto = issues.filter(x => x.canFix).length;
+  const manual = issues.filter(x => !x.canFix).length;
+  body.insertAdjacentHTML('beforeend', `
+    <div class="success-wrap">
+      <div class="success-ring"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#16a34a"><path d="M5 13l4 4L19 7"/></svg></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Upload successful</div>
+      <div style="font-size:13px;color:#6b7280;">Your data has been corrected and submitted.</div>
+      <div class="success-summary">
+        Rows processed: <strong>${parsedRows.length}</strong><br>
+        AI auto-corrections: <strong>${auto}</strong><br>
+        Manual corrections: <strong>${manual}</strong><br>
+        Final rows submitted: <strong>${parsedRows.length}</strong>
+      </div>
+    </div>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn btn-primary" onclick="closeModal()">Done</button>`);
+}
+</script>
+</body>
+</html>

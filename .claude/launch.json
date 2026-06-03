@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "upload-prototype",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["/opt/homebrew/bin/npx", "serve", "-p", "3333", "/Users/IDSP35114/Documents/1F_Sheets"],
+      "port": 3333
+    }
+  ]
+}
