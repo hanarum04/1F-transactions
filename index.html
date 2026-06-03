@@ -195,6 +195,102 @@
 
   .hidden { display: none !important; }
   .divider { height: 1px; background: #f3f4f6; margin: 16px 0; }
+
+  /* ══ Profile creation modal ══ */
+  .pmodal { width: 1040px; max-width: 98vw; max-height: 92vh; }
+
+  /* 3-step header bar */
+  .pstep-bar { display: flex; align-items: stretch; padding: 0 24px; border-bottom: 1px solid #e5e7eb; gap: 0; background: #fff; flex-shrink: 0; }
+  .pstep { display: flex; align-items: flex-start; gap: 12px; padding: 16px 24px 14px 0; flex: 1; position: relative; }
+  .pstep + .pstep::before { content: ''; position: absolute; left: 0; top: 28px; width: 100%; height: 1px; background: #e5e7eb; z-index: 0; pointer-events: none; }
+  .pstep-line { position: absolute; left: 0; top: 27px; height: 2px; background: #16a34a; transition: width .3s; z-index: 1; }
+  .pstep-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; z-index: 2; }
+  .psn-pending { border: 1.5px solid #d1d5db; color: #9ca3af; background: #fff; }
+  .psn-active  { border: 2px solid #1d4ed8; color: #fff; background: #1d4ed8; }
+  .psn-done    { border: 2px solid #16a34a; color: #16a34a; background: #f0fdf4; font-size: 14px; }
+  .pstep-info { z-index: 2; }
+  .pstep-label { font-size: 13px; font-weight: 600; }
+  .psl-pending { color: #9ca3af; }
+  .psl-active  { color: #1d4ed8; }
+  .psl-done    { color: #374151; }
+  .pstep-sub   { font-size: 11px; color: #9ca3af; margin-top: 1px; line-height: 1.4; max-width: 200px; }
+
+  /* Two-panel layout for step 2 */
+  .schema-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+  .col-list-panel { width: 280px; flex-shrink: 0; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow: hidden; }
+  .col-list-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #f3f4f6; flex-shrink: 0; }
+  .col-list-header-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .col-list-body { flex: 1; overflow-y: auto; padding: 8px; }
+  .col-card { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 4px; }
+  .col-card:hover { background: #f9fafb; border-color: #e5e7eb; }
+  .col-card.active { background: #eff6ff; border-color: #bfdbfe; }
+  .col-card-icon { color: #9ca3af; flex-shrink: 0; }
+  .col-card-name { font-size: 13px; font-weight: 500; color: #111827; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-card-type { font-size: 10px; color: #6b7280; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+  .col-card-ai { width: 6px; height: 6px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
+  .col-card-drag { color: #d1d5db; cursor: grab; flex-shrink: 0; }
+
+  .col-config-panel { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .col-config-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 16px; }
+  .form-field { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+  .form-label .req { color: #ef4444; }
+  .form-input { width: 100%; border: 1px solid #e5e7eb; border-radius: 6px; padding: 7px 10px; font-size: 13px; color: #111827; outline: none; font-family: inherit; }
+  .form-input:focus { border-color: #1d4ed8; }
+  .form-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 3px; }
+  .form-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+  /* Data type selector */
+  .type-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .type-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px; cursor: pointer; background: #fff; color: #374151; font-family: inherit; }
+  .type-btn:hover { background: #f9fafb; border-color: #d1d5db; }
+  .type-btn.active { background: #eff6ff; border-color: #1d4ed8; color: #1d4ed8; font-weight: 500; }
+
+  /* Checkbox row */
+  .check-field { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; }
+  .check-field input[type=checkbox] { margin-top: 2px; accent-color: #1d4ed8; width: 14px; height: 14px; flex-shrink: 0; }
+  .check-field label { font-size: 13px; color: #374151; cursor: pointer; }
+  .check-field label span { font-size: 11px; color: #9ca3af; display: block; }
+  .check-field.disabled { opacity: .5; pointer-events: none; }
+
+  /* Delete column button */
+  .delete-col-btn { width: 100%; padding: 8px; border: 1px solid #fca5a5; border-radius: 6px; background: #fff; color: #dc2626; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .delete-col-btn:hover { background: #fef2f2; }
+
+  /* AI upload strip inside step 2 */
+  .ai-upload-strip { margin: 12px 14px; padding: 10px 12px; border: 1px dashed #bfdbfe; border-radius: 8px; background: #f8faff; display: flex; align-items: center; gap: 10px; }
+  .ai-upload-strip .strip-label { font-size: 12px; color: #374151; flex: 1; }
+  .ai-upload-strip .strip-label b { color: #1d4ed8; }
+  .ai-file-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid #1d4ed8; border-radius: 6px; background: #fff; color: #1d4ed8; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .ai-file-btn:hover { background: #eff6ff; }
+  .ai-file-input { display: none; }
+
+  /* AI summary banner */
+  .ai-summary { margin: 0 14px 8px; padding: 10px 12px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; }
+  .ai-summary-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .ai-summary-title { font-size: 12px; font-weight: 600; color: #1e40af; display: flex; align-items: center; gap: 6px; }
+  .ai-summary-toggle { font-size: 11px; color: #3b82f6; }
+  .ai-summary-body { margin-top: 8px; }
+  .ai-adj-item { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: #1e40af; line-height: 1.5; margin-bottom: 4px; }
+  .ai-adj-dot { width: 4px; height: 4px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; margin-top: 5px; }
+
+  /* Spinner (small) */
+  .spinner-sm { width: 16px; height: 16px; border: 2px solid #bfdbfe; border-top-color: #1d4ed8; border-radius: 50%; animation: spin .7s linear infinite; }
+
+  /* Static step panels (1 & 3) */
+  .static-form { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .static-section { margin-bottom: 20px; }
+  .static-section-title { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .static-field { margin-bottom: 14px; }
+  .static-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; display: flex; gap: 3px; }
+  .static-input { width: 100%; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; color: #9ca3af; font-size: 13px; cursor: not-allowed; font-family: inherit; }
+  .static-textarea { min-height: 80px; resize: none; }
+  .toggle-group { display: flex; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; width: fit-content; }
+  .toggle-opt { padding: 6px 16px; font-size: 13px; cursor: not-allowed; color: #9ca3af; background: #f9fafb; }
+  .toggle-opt.sel { background: #fff; color: #1d4ed8; border-right: 1px solid #e5e7eb; font-weight: 500; }
+  .no-col-selected { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #9ca3af; font-size: 13px; gap: 8px; padding: 40px; text-align: center; }
 </style>
 </head>
 <body>
@@ -233,7 +329,7 @@
       <div class="breadcrumb">Record <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg><span>Profile</span></div>
       <div class="page-header">
         <div class="page-title">DE Test NUMBER and DECIMALS <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
-        <div class="btn-row"><button class="btn btn-sm">Favorite</button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M14.828 14.828a4 4 0 015.656 0l-4 4a4 4 0 01-5.656-5.656l1.1-1.1"/></svg></button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2"/></svg></button><button class="btn btn-primary btn-sm" onclick="openModal()">+ Profile</button></div>
+        <div class="btn-row"><button class="btn btn-sm">Favorite</button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101M14.828 14.828a4 4 0 015.656 0l-4 4a4 4 0 01-5.656-5.656l1.1-1.1"/></svg></button><button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2"/></svg></button><button class="btn btn-primary btn-sm" onclick="openProfileModal()">+ Profile</button></div>
       </div>
 
       <div class="card">
@@ -273,6 +369,21 @@
     <div class="modal-header"><div class="modal-title">Upload Profile Data</div><button class="modal-close" onclick="closeModal()">&#x2715;</button></div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- ══════ PROFILE CREATION MODAL ══════ -->
+<div class="overlay" id="profile-modal">
+  <div class="modal pmodal">
+    <div class="modal-header">
+      <div class="modal-title">Create Profile</div>
+      <button class="modal-close" onclick="closeProfileModal()">&#x2715;</button>
+    </div>
+    <!-- 3-step header -->
+    <div class="pstep-bar" id="pstep-bar"></div>
+    <!-- Body splits per step -->
+    <div class="modal-body" id="pmodal-body" style="padding:0;"></div>
+    <div class="modal-footer" id="pmodal-footer"></div>
   </div>
 </div>
 
@@ -735,6 +846,340 @@ function doSubmit() {
     return;
   }
   goStep('success');
+}
+
+/* ══════════════════════════════════════════════════
+   ██████  PROFILE CREATION WIZARD
+═══════════════════════════════════════════════════ */
+
+/* ─── State ─── */
+let pStep = 1;   // 1 | 2 | 3
+let pCols = [];  // array of column objects
+let pActive = null; // index of active column in list
+let pAiLog = []; // AI adjustment strings
+let pSchemaFile = null;
+
+const TYPE_ICONS = {
+  'Text':           '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h10"/></svg>',
+  'Whole Number':   '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>',
+  'Decimal Number': '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>',
+  'Dropdown':       '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>',
+  'Date':           '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+};
+
+const COL_ALIASES = {
+  user_id:'uid', userid:'uid', user_no:'uid',
+  emp_id:'employee_id', employee_no:'employee_id', empid:'employee_id',
+  amt:'amount', val:'value', ttl:'total',
+  desc:'description', descr:'description', describe:'description',
+  dt:'date', created_at:'created_date', updated_at:'updated_date',
+  acct:'account', acct_no:'account_number', account_no:'account_number',
+};
+
+function openProfileModal() {
+  pStep = 1; pCols = []; pActive = null; pAiLog = []; pSchemaFile = null;
+  document.getElementById('profile-modal').classList.add('open');
+  renderProfile();
+}
+function closeProfileModal() { document.getElementById('profile-modal').classList.remove('open'); }
+
+function renderProfile() {
+  document.getElementById('pstep-bar').innerHTML = buildPStepper();
+  const body = document.getElementById('pmodal-body');
+  const foot = document.getElementById('pmodal-footer');
+  body.innerHTML = foot.innerHTML = '';
+  if (pStep === 1) renderPStep1(body, foot);
+  if (pStep === 2) renderPStep2(body, foot);
+  if (pStep === 3) renderPStep3(body, foot);
+}
+
+/* ─── Stepper ─── */
+function buildPStepper() {
+  const steps = [
+    { n:1, label:'Profile Definition', sub:'Set up basic information, ownership, and access permissions.' },
+    { n:2, label:'Data Schema',         sub:'Define the data structure: columns, types, validation rules, and key fields.' },
+    { n:3, label:'Change Management',   sub:'Configure approval workflow to review profile data changes.' },
+  ];
+  let h = '';
+  steps.forEach((s, i) => {
+    const cls = s.n < pStep ? 'done' : s.n === pStep ? 'active' : 'pending';
+    h += `<div class="pstep" style="position:relative;">`;
+    if (i > 0) h += `<div style="position:absolute;left:0;top:27px;right:0;height:2px;background:#e5e7eb;z-index:0;"></div>`;
+    if (s.n < pStep) h += `<div style="position:absolute;left:0;top:26px;right:0;height:2px;background:#16a34a;z-index:1;"></div>`;
+    h += `<div class="pstep-num psn-${cls}" style="z-index:2;">${cls==='done'?'✓':s.n}</div>
+    <div class="pstep-info" style="z-index:2;">
+      <div class="pstep-label psl-${cls}">${s.label}</div>
+      <div class="pstep-sub">${s.sub}</div>
+    </div></div>`;
+  });
+  return h;
+}
+
+/* ─── Step 1: Profile Definition (static) ─── */
+function renderPStep1(body, foot) {
+  body.style.overflowY = 'auto';
+  body.insertAdjacentHTML('beforeend', `
+    <div class="static-form">
+      <div class="static-field">
+        <div class="static-label"><span style="color:#ef4444;">*</span> Title</div>
+        <input class="static-input" placeholder="e.g., Bank Account Master Data" disabled>
+        <div class="form-hint">A clear, descriptive name that identifies this profile.</div>
+      </div>
+      <div class="static-field">
+        <div class="static-label"><span style="color:#ef4444;">*</span> Description</div>
+        <div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:8px 10px;color:#9ca3af;font-size:13px;min-height:100px;">Describe what data this profile manages and how it will be used</div>
+        <div class="form-hint">Help others understand the purpose and scope of this profile.</div>
+      </div>
+      <div class="static-field">
+        <div class="static-label"><span style="color:#ef4444;">*</span> Business Owner Project</div>
+        <div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;display:flex;align-items:center;justify-content:space-between;">Please select <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div>
+        <div class="form-hint">The project that owns and is responsible for this profile.</div>
+      </div>
+      <div class="static-field">
+        <div class="static-label"><span style="color:#ef4444;">*</span> Visibility</div>
+        <div class="toggle-group"><div class="toggle-opt sel">Private</div><div class="toggle-opt">Public</div></div>
+        <div class="form-hint" style="margin-top:6px;">Private: Only editors, tech PIC and watchers can access. Public: All users can view.</div>
+      </div>
+      <div class="static-section">
+        <div class="static-section-title">Editor</div>
+        <div class="static-field"><div class="static-label">Individual Users</div><div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;display:flex;align-items:center;justify-content:space-between;">Please select <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div><div class="form-hint">Select individual users who can edit profile data.</div></div>
+        <div class="static-field"><div class="static-label">Projects</div><div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;display:flex;align-items:center;justify-content:space-between;">Please select <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div><div class="form-hint">Select projects whose members can edit profile data.</div></div>
+      </div>
+    </div>
+  `);
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeProfileModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="pStep=2;renderProfile()">Next</button>
+  `);
+}
+
+/* ─── Step 2: Data Schema (AI-assisted) ─── */
+function renderPStep2(body, foot) {
+  body.style.overflow = 'hidden';
+  body.style.display = 'flex';
+  body.style.flexDirection = 'column';
+
+  // Ensure at least one empty col
+  if (pCols.length === 0) pCols.push(makeCol());
+  if (pActive === null) pActive = 0;
+
+  body.insertAdjacentHTML('beforeend', `<div class="schema-layout" id="schema-layout">${buildColListPanel()}${buildColConfigPanel()}</div>`);
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeProfileModal()">Cancel</button>
+    <button class="btn" onclick="pStep=1;renderProfile()">Previous</button>
+    <button class="btn btn-primary" onclick="pStep=3;renderProfile()">Next</button>
+  `);
+}
+
+function buildColListPanel() {
+  let items = '';
+  pCols.forEach((col, i) => {
+    const activeCls = i === pActive ? ' active' : '';
+    const aiDot = col.aiInferred ? '<div class="col-card-ai" title="AI detected"></div>' : '';
+    const icon = TYPE_ICONS[col.type] || TYPE_ICONS['Text'];
+    items += `<div class="col-card${activeCls}" onclick="pActive=${i};rerenderSchema()">
+      <div class="col-card-icon">${icon}</div>
+      <div class="col-card-name">${col.name || 'Untitled Column'}</div>
+      <div class="col-card-type">${col.type}</div>
+      ${aiDot}
+    </div>`;
+  });
+
+  const aiSummary = pAiLog.length ? `
+    <div class="ai-summary">
+      <div class="ai-summary-header" onclick="toggleAiSummary()">
+        <div class="ai-summary-title">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          AI detected ${pCols.filter(c=>c.aiInferred).length} column(s)
+        </div>
+        <div class="ai-summary-toggle" id="ai-tog">Show details</div>
+      </div>
+      <div class="ai-summary-body hidden" id="ai-sum-body">
+        ${pAiLog.map(l=>`<div class="ai-adj-item"><div class="ai-adj-dot"></div><span>${l}</span></div>`).join('')}
+      </div>
+    </div>` : '';
+
+  return `<div class="col-list-panel">
+    <div class="col-list-header">
+      <div class="col-list-header-label">Columns (${pCols.length})</div>
+      <button class="btn btn-sm" style="padding:3px 8px;font-size:12px;" onclick="addManualCol()">+ Add</button>
+    </div>
+    <!-- AI upload strip -->
+    <div class="ai-upload-strip">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#1d4ed8;flex-shrink:0"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      <div class="strip-label"><b>AI auto-detect</b> — upload a sample file</div>
+      <label class="ai-file-btn">
+        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload
+        <input type="file" class="ai-file-input" accept=".csv,.xls,.xlsx" onchange="handleSchemaFile(this)">
+      </label>
+    </div>
+    ${aiSummary}
+    <div class="col-list-body" id="col-list-body">${items}</div>
+  </div>`;
+}
+
+function buildColConfigPanel() {
+  if (pActive === null || !pCols[pActive]) {
+    return `<div class="col-config-panel"><div class="no-col-selected"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:#d1d5db"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>Select a column to configure</div></div>`;
+  }
+  const col = pCols[pActive];
+  const types = ['Text','Whole Number','Decimal Number','Dropdown','Date'];
+  const typeButtons = types.map(t =>
+    `<button class="type-btn${col.type===t?' active':''}" onclick="setColType(${pActive},'${t}')">${TYPE_ICONS[t]||''}${t}</button>`
+  ).join('');
+
+  const aiBadge = col.aiInferred
+    ? `<span style="font-size:10px;color:#1d4ed8;background:#eff6ff;padding:1px 6px;border-radius:4px;margin-left:6px;">AI detected</span>` : '';
+
+  return `<div class="col-config-panel">
+    <div class="col-config-title">Configure Column${aiBadge}</div>
+    ${col.aiInferred && col.aiNote ? `<div style="font-size:11px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;margin-bottom:14px;line-height:1.6;">${col.aiNote}</div>` : ''}
+    <div class="form-field">
+      <div class="form-label"><span class="req">*</span> Column Name</div>
+      <input class="form-input" placeholder="e.g., Account Number" value="${col.name}" oninput="updateCol(${pActive},'name',this.value)">
+    </div>
+    <div class="form-field">
+      <div class="form-label">Column Description</div>
+      <textarea class="form-input form-textarea" placeholder="Please enter" oninput="updateCol(${pActive},'desc',this.value)">${col.desc||''}</textarea>
+      <div class="char-count">${(col.desc||'').length} / 100</div>
+    </div>
+    <div class="form-field">
+      <div class="form-label"><span class="req">*</span> Data Type</div>
+      <div class="type-row">${typeButtons}</div>
+    </div>
+    ${col.type==='Dropdown' ? `<div class="form-field"><div class="form-label">Options</div><input class="form-input" placeholder="Comma-separated: Option A, Option B, Option C" value="${(col.dropdownOptions||[]).join(', ')}" oninput="updateCol(${pActive},'dropdownOptions',this.value.split(',').map(s=>s.trim()).filter(Boolean))"></div>` : ''}
+    <div style="border-top:1px solid #f3f4f6;padding-top:12px;margin-top:4px;">
+      <div class="check-field${col.isKey?' disabled':''}">
+        <input type="checkbox" id="ck-key" ${col.isKey?'checked':''} onchange="updateCol(${pActive},'isKey',this.checked)">
+        <label for="ck-key">Key Column <span>Uniquely identifies each row. Mandatory and shown in summary by default.</span></label>
+      </div>
+      <div class="check-field${col.isKey?' disabled':''}">
+        <input type="checkbox" id="ck-mand" ${col.isMandatory||col.isKey?'checked':''} onchange="updateCol(${pActive},'isMandatory',this.checked)" ${col.isKey?'disabled':''}>
+        <label for="ck-mand">Mandatory ${col.isKey?'<span>(auto-enabled for key columns)</span>':''}</label>
+      </div>
+      <div class="check-field${col.isKey?' disabled':''}">
+        <input type="checkbox" id="ck-sum" ${col.showInSummary||col.isKey?'checked':''} onchange="updateCol(${pActive},'showInSummary',this.checked)" ${col.isKey?'disabled':''}>
+        <label for="ck-sum">Show in Summary ${col.isKey?'<span>(auto-enabled for key columns)</span>':''}</label>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="delete-col-btn" onclick="deleteCol(${pActive})">Delete Column</button>
+    </div>
+  </div>`;
+}
+
+function rerenderSchema() {
+  const layout = document.getElementById('schema-layout');
+  if (layout) layout.innerHTML = buildColListPanel() + buildColConfigPanel();
+}
+
+function makeCol(overrides={}) {
+  return { name:'', desc:'', type:'Text', isKey:false, isMandatory:false, showInSummary:false, dropdownOptions:[], aiInferred:false, aiNote:'', ...overrides };
+}
+function addManualCol() { pCols.push(makeCol()); pActive = pCols.length-1; rerenderSchema(); }
+function deleteCol(i) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} rerenderSchema(); }
+function updateCol(i, key, val) { pCols[i][key] = val; }
+function setColType(i, type) { pCols[i].type = type; rerenderSchema(); }
+function toggleAiSummary() {
+  const body = document.getElementById('ai-sum-body');
+  const tog  = document.getElementById('ai-tog');
+  if (!body || !tog) return;
+  const open = body.classList.toggle('hidden');
+  tog.textContent = open ? 'Show details' : 'Hide details';
+}
+
+/* ─── AI Schema Inference ─── */
+function handleSchemaFile(inp) {
+  const f = inp.files && inp.files[0];
+  if (!f) return;
+  pSchemaFile = f;
+  // Show spinner in list panel
+  const strip = document.querySelector('.ai-upload-strip');
+  if (strip) strip.innerHTML = `<div class="spinner-sm"></div><div style="font-size:12px;color:#6b7280;">AI is reading your file…</div>`;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type:'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
+    if (raw.length < 1) return;
+    const headers = raw[0].map(h => h===null?'':String(h).trim()).filter(Boolean);
+    const dataRows = raw.slice(1, 11); // sample up to 10 rows for type inference
+    const colValues = headers.map((_, ci) => dataRows.map(r => r[ci] ?? null).filter(v => v !== null && v !== ''));
+
+    pAiLog = [];
+    pCols = headers.map((rawName, ci) => {
+      const values = colValues[ci];
+      const normalized = normalizeColName(rawName);
+      if (normalized !== rawName) pAiLog.push(`Renamed <strong>${rawName}</strong> → <strong>${normalized}</strong> (common alias match)`);
+
+      const type = inferColType(values);
+      const typeMap = { 'Text':'Text', 'Whole Number':'Whole Number', 'Decimal Number':'Decimal Number', 'Dropdown':'Dropdown', 'Date':'Date' };
+      const sampleVals = values.slice(0,3).map(v=>String(v)).join(', ');
+      let aiNote = `Detected from "${rawName}" — inferred type: <strong>${type}</strong>`;
+      if (sampleVals) aiNote += ` (sample values: ${sampleVals})`;
+
+      // Heuristic: first column with unique numeric-ish values → Key Column
+      const isKey = ci === 0 && values.length > 0 && new Set(values.map(String)).size === values.length;
+      if (isKey) pAiLog.push(`Marked <strong>${normalized}</strong> as Key Column (unique values, likely identifier)`);
+
+      const dropdownOptions = type === 'Dropdown' ? [...new Set(values.map(v=>String(v).trim()))] : [];
+      if (type === 'Dropdown') pAiLog.push(`Detected <strong>Dropdown</strong> for "${normalized}" (${dropdownOptions.length} distinct values: ${dropdownOptions.slice(0,3).join(', ')})`);
+      else if (sampleVals) pAiLog.push(`Detected <strong>${type}</strong> for "${normalized}" (sample: ${sampleVals})`);
+
+      return makeCol({ name:normalized, type, isKey, isMandatory:isKey, showInSummary:isKey, dropdownOptions, aiInferred:true, aiNote });
+    });
+
+    pActive = 0;
+    rerenderSchema();
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function normalizeColName(raw) {
+  const key = raw.toLowerCase().replace(/[\s\-]+/g,'_');
+  return COL_ALIASES[key] || raw;
+}
+
+function inferColType(values) {
+  if (!values.length) return 'Text';
+  const strs = values.map(v => String(v).trim());
+  const distinct = [...new Set(strs)];
+  if (distinct.length <= 5 && values.length >= 3) return 'Dropdown';
+  if (strs.every(v => /^\s*-?\d+\s*$/.test(v))) return 'Whole Number';
+  if (strs.every(v => !isNaN(parseFloat(v)) && isFinite(Number(v)))) return 'Decimal Number';
+  if (strs.every(v => !isNaN(Date.parse(v)) && v.length > 4)) return 'Date';
+  return 'Text';
+}
+
+/* ─── Step 3: Change Management (static) ─── */
+function renderPStep3(body, foot) {
+  body.style.overflowY = 'auto';
+  body.style.display = '';
+  body.insertAdjacentHTML('beforeend', `
+    <div class="static-form">
+      <div class="static-field">
+        <div class="static-label"><span style="color:#ef4444;">*</span> Change Management</div>
+        <div class="toggle-group"><div class="toggle-opt sel">Yes</div><div class="toggle-opt">No</div></div>
+        <div class="form-hint" style="margin-top:6px;">When enabled, all data uploads and changes require reviewer approval before being applied.</div>
+      </div>
+      <div class="static-section">
+        <div class="static-section-title">Reviewers</div>
+        <div style="display:grid;grid-template-columns:180px 160px 1fr;gap:10px;align-items:start;">
+          <div><div class="static-label"><span style="color:#ef4444;">*</span> Project</div><div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;display:flex;justify-content:space-between;">Please select <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div></div>
+          <div><div class="static-label">Role</div><div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;display:flex;justify-content:space-between;">— <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div></div>
+          <div><div class="static-label">Users</div><div style="border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;padding:7px 10px;color:#9ca3af;font-size:13px;">Select a project first</div></div>
+        </div>
+        <button style="margin-top:12px;display:flex;align-items:center;gap:5px;border:1px dashed #e5e7eb;border-radius:6px;padding:7px 14px;background:#fff;color:#6b7280;font-size:13px;cursor:not-allowed;font-family:inherit;">+ Add Reviewer</button>
+      </div>
+    </div>
+  `);
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeProfileModal()">Cancel</button>
+    <button class="btn" onclick="pStep=2;renderProfile()">Previous</button>
+    <button class="btn btn-primary" onclick="closeProfileModal()">Finish</button>
+  `);
 }
 
 /* ══════════════════════════════════════════════════
