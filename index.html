@@ -197,11 +197,8 @@
   .sheets-btn-wrap { position: relative; display: inline-flex; }
   .sheets-dropdown { display: none; position: absolute; top: 100%; right: 0; padding-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.10); min-width: 220px; z-index: 100; padding: 4px; }
   .sheets-dropdown.open { display: block; }
-  .sheets-dropdown-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: #374151; }
+  .sheets-dropdown-item { padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #374151; }
   .sheets-dropdown-item:hover { background: #f9fafb; }
-  .sheets-dropdown-item svg { flex-shrink: 0; color: #6b7280; margin-top: 2px; }
-  .sdi-label { font-size: 13px; font-weight: 500; color: #111827; }
-  .sdi-sub   { font-size: 11px; color: #9ca3af; margin-top: 1px; }
 
   .hidden { display: none !important; }
   .divider { height: 1px; background: #f3f4f6; margin: 16px 0; }
@@ -346,27 +343,9 @@
     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
   </button>
   <div class="sheets-dropdown" id="sheets-dropdown" onmouseenter="showSheetsMenu()" onmouseleave="hideSheetsMenu()">
-    <div class="sheets-dropdown-item" onclick="openProfileModal('Lookup')">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <div>
-        <div class="sdi-label">Lookup</div>
-        <div class="sdi-sub">Reference data with defined schema</div>
-      </div>
-    </div>
-    <div class="sheets-dropdown-item" onclick="openProfileModal('Entries')">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-      <div>
-        <div class="sdi-label">Entries</div>
-        <div class="sdi-sub">Transactional records over time</div>
-      </div>
-    </div>
-    <div class="sheets-dropdown-item" onclick="openProfileModal('Variable')">
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h10M4 17h6"/><path d="M15 14l3 3-3 3"/></svg>
-      <div>
-        <div class="sdi-label">Variable</div>
-        <div class="sdi-sub">Dynamic parameters and config values</div>
-      </div>
-    </div>
+    <div class="sheets-dropdown-item" onclick="openProfileModal('Lookup')">Lookup</div>
+    <div class="sheets-dropdown-item" onclick="openProfileModal('Entries')">Entries</div>
+    <div class="sheets-dropdown-item" onclick="openProfileModal('Variable')">Variable</div>
   </div>
 </div></div>
       </div>
@@ -970,7 +949,6 @@ function buildPStepper() {
       <div class="pstep-num psn-${cls}">${icon}</div>
       <div class="pstep-info">
         <div class="pstep-label psl-${cls}">${s.label}</div>
-        <div class="pstep-sub">${s.sub}</div>
       </div>
     </div>`;
   });
