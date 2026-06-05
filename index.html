@@ -975,7 +975,7 @@ function renderPStep2(body, foot) {
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeProfileModal()">Cancel</button>
     <button class="btn" onclick="pStep=1;renderProfile()">Previous</button>
-    <button class="btn btn-primary" onclick="pStep=3;renderProfile()">Next</button>
+    <button class="btn btn-primary" onclick="pValidateAndNext()">Next</button>
   `);
 }
 
@@ -999,6 +999,10 @@ function buildColListPanel() {
       <button class="btn btn-sm" style="padding:3px 8px;font-size:12px;" onclick="addManualCol()">+ Add</button>
     </div>
     <div class="col-list-body" id="col-list-body">${items}</div>
+    <div id="no-key-err" class="hidden" style="margin:0 8px 8px;padding:8px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:12px;color:#991b1b;display:flex;align-items:flex-start;gap:6px;">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      At least one column must be set as a Key Column before proceeding.
+    </div>
     <!-- AI upload strip at the bottom -->
     <div class="ai-upload-strip" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none;border-top:1px dashed #bfdbfe;">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#1d4ed8;flex-shrink:0"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
@@ -1043,9 +1047,9 @@ function buildColConfigPanel() {
     </div>
     ${col.type==='Dropdown' ? `<div class="form-field"><div class="form-label">Options</div><input class="form-input" placeholder="Comma-separated: Option A, Option B, Option C" value="${(col.dropdownOptions||[]).join(', ')}" oninput="updateCol(${pActive},'dropdownOptions',this.value.split(',').map(s=>s.trim()).filter(Boolean))"></div>` : ''}
     <div style="border-top:1px solid #f3f4f6;padding-top:12px;margin-top:4px;">
-      <div class="check-field${col.isKey?' disabled':''}">
-        <input type="checkbox" id="ck-key" ${col.isKey?'checked':''} onchange="updateCol(${pActive},'isKey',this.checked)">
-        <label for="ck-key">Key Column <span>Uniquely identifies each row. Mandatory and shown in summary by default.</span></label>
+      <div class="check-field">
+        <input type="checkbox" id="ck-key" ${col.isKey?'checked':''} onchange="setKeyCol(${pActive},this.checked)">
+        <label for="ck-key">Key Column <span>Uniquely identifies each row. Mandatory and shown in summary are auto-enabled.</span></label>
       </div>
       <div class="check-field${col.isKey?' disabled':''}">
         <input type="checkbox" id="ck-mand" ${col.isMandatory||col.isKey?'checked':''} onchange="updateCol(${pActive},'isMandatory',this.checked)" ${col.isKey?'disabled':''}>
@@ -1065,6 +1069,32 @@ function buildColConfigPanel() {
 function rerenderSchema() {
   const layout = document.getElementById('schema-layout');
   if (layout) layout.innerHTML = buildColListPanel() + buildColConfigPanel();
+}
+
+// Setting isKey also auto-enables Mandatory + Show in Summary
+function setKeyCol(i, val) {
+  pCols[i].isKey = val;
+  if (val) {
+    pCols[i].isMandatory    = true;
+    pCols[i].showInSummary  = true;
+  }
+  rerenderSchema();
+}
+
+// Validate Step 2 before proceeding: at least one Key Column required
+function pValidateAndNext() {
+  const hasKey = pCols.some(c => c.isKey);
+  const errEl  = document.getElementById('no-key-err');
+  if (!hasKey) {
+    if (errEl) {
+      errEl.classList.remove('hidden');
+      errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    return;
+  }
+  if (errEl) errEl.classList.add('hidden');
+  pStep = 3;
+  renderProfile();
 }
 
 function makeCol(overrides={}) {
