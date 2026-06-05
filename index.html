@@ -1098,7 +1098,7 @@ function pValidateAndNext() {
 }
 
 function makeCol(overrides={}) {
-  return { name:'', desc:'', type:'Text', isKey:false, isMandatory:false, showInSummary:false, dropdownOptions:[], aiInferred:false, aiNote:'', ...overrides };
+  return { name:'', desc:'', type:'Text', isKey:false, isMandatory:true, showInSummary:true, dropdownOptions:[], aiInferred:false, aiNote:'', ...overrides };
 }
 function addManualCol() { pCols.push(makeCol()); pActive = pCols.length-1; rerenderSchema(); }
 function deleteCol(i) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} rerenderSchema(); }
@@ -1124,6 +1124,17 @@ function handleSchemaFile(inp) {
     const dataRows = raw.slice(1, 11); // sample up to 10 rows for type inference
     const colValues = headers.map((_, ci) => dataRows.map(r => r[ci] ?? null).filter(v => v !== null && v !== ''));
 
+    // Pick best Key Column candidate:
+    // 1. First column whose values are all unique (classic ID column)
+    // 2. Any column whose name matches common key patterns
+    // 3. Fallback: first column
+    const KEY_NAME_PATTERNS = /^(id|uid|key|code|no|number|num|ref|uuid|identifier|account_?no|emp_?id|user_?id)$/i;
+    let keyIdx = colValues.findIndex((vals, ci) =>
+      vals.length > 0 && new Set(vals.map(String)).size === vals.length
+    );
+    if (keyIdx === -1) keyIdx = headers.findIndex(h => KEY_NAME_PATTERNS.test(h.trim()));
+    if (keyIdx === -1) keyIdx = 0; // always pick something
+
     pAiLog = [];
     pCols = headers.map((rawName, ci) => {
       const values = colValues[ci];
@@ -1131,20 +1142,19 @@ function handleSchemaFile(inp) {
       if (normalized !== rawName) pAiLog.push(`Renamed <strong>${rawName}</strong> → <strong>${normalized}</strong> (common alias match)`);
 
       const type = inferColType(values);
-      const typeMap = { 'Text':'Text', 'Whole Number':'Whole Number', 'Decimal Number':'Decimal Number', 'Dropdown':'Dropdown', 'Date':'Date' };
       const sampleVals = values.slice(0,3).map(v=>String(v)).join(', ');
       let aiNote = `Detected from "${rawName}" — inferred type: <strong>${type}</strong>`;
       if (sampleVals) aiNote += ` (sample values: ${sampleVals})`;
 
-      // Heuristic: first column with unique numeric-ish values → Key Column
-      const isKey = ci === 0 && values.length > 0 && new Set(values.map(String)).size === values.length;
-      if (isKey) pAiLog.push(`Marked <strong>${normalized}</strong> as Key Column (unique values, likely identifier)`);
+      const isKey = ci === keyIdx;
+      if (isKey) pAiLog.push(`Marked <strong>${normalized}</strong> as Key Column (${new Set(values.map(String)).size === values.length ? 'all values unique' : 'best available candidate'})`);
 
       const dropdownOptions = type === 'Dropdown' ? [...new Set(values.map(v=>String(v).trim()))] : [];
       if (type === 'Dropdown') pAiLog.push(`Detected <strong>Dropdown</strong> for "${normalized}" (${dropdownOptions.length} distinct values: ${dropdownOptions.slice(0,3).join(', ')})`);
       else if (sampleVals) pAiLog.push(`Detected <strong>${type}</strong> for "${normalized}" (sample: ${sampleVals})`);
 
-      return makeCol({ name:normalized, type, isKey, isMandatory:isKey, showInSummary:isKey, dropdownOptions, aiInferred:true, aiNote });
+      // isKey also forces Mandatory + Show in Summary (user can still override non-key columns)
+      return makeCol({ name:normalized, type, isKey, isMandatory:true, showInSummary:true, dropdownOptions, aiInferred:true, aiNote });
     });
 
     pActive = 0;
