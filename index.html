@@ -993,27 +993,14 @@ function buildColListPanel() {
     </div>`;
   });
 
-  const aiSummary = pAiLog.length ? `
-    <div class="ai-summary">
-      <div class="ai-summary-header" onclick="toggleAiSummary()">
-        <div class="ai-summary-title">
-          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-          AI detected ${pCols.filter(c=>c.aiInferred).length} column(s)
-        </div>
-        <div class="ai-summary-toggle" id="ai-tog">Show details</div>
-      </div>
-      <div class="ai-summary-body hidden" id="ai-sum-body">
-        ${pAiLog.map(l=>`<div class="ai-adj-item"><div class="ai-adj-dot"></div><span>${l}</span></div>`).join('')}
-      </div>
-    </div>` : '';
-
   return `<div class="col-list-panel">
     <div class="col-list-header">
       <div class="col-list-header-label">Columns (${pCols.length})</div>
       <button class="btn btn-sm" style="padding:3px 8px;font-size:12px;" onclick="addManualCol()">+ Add</button>
     </div>
-    <!-- AI upload strip -->
-    <div class="ai-upload-strip">
+    <div class="col-list-body" id="col-list-body">${items}</div>
+    <!-- AI upload strip at the bottom -->
+    <div class="ai-upload-strip" style="margin:0;border-radius:0;border-left:none;border-right:none;border-bottom:none;border-top:1px dashed #bfdbfe;">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#1d4ed8;flex-shrink:0"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
       <div class="strip-label"><b>AI auto-detect</b> — upload a sample file</div>
       <label class="ai-file-btn">
@@ -1022,8 +1009,6 @@ function buildColListPanel() {
         <input type="file" class="ai-file-input" accept=".csv,.xls,.xlsx" onchange="handleSchemaFile(this)">
       </label>
     </div>
-    ${aiSummary}
-    <div class="col-list-body" id="col-list-body">${items}</div>
   </div>`;
 }
 
@@ -1089,13 +1074,6 @@ function addManualCol() { pCols.push(makeCol()); pActive = pCols.length-1; reren
 function deleteCol(i) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} rerenderSchema(); }
 function updateCol(i, key, val) { pCols[i][key] = val; }
 function setColType(i, type) { pCols[i].type = type; rerenderSchema(); }
-function toggleAiSummary() {
-  const body = document.getElementById('ai-sum-body');
-  const tog  = document.getElementById('ai-tog');
-  if (!body || !tog) return;
-  const open = body.classList.toggle('hidden');
-  tog.textContent = open ? 'Show details' : 'Hide details';
-}
 
 /* ─── AI Schema Inference ─── */
 function handleSchemaFile(inp) {
