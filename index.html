@@ -195,7 +195,7 @@
 
   /* ── + Sheets hover dropdown ── */
   .sheets-btn-wrap { position: relative; display: inline-flex; }
-  .sheets-dropdown { display: none; position: absolute; top: calc(100% + 4px); right: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.10); min-width: 220px; z-index: 100; padding: 4px; }
+  .sheets-dropdown { display: none; position: absolute; top: 100%; right: 0; padding-top: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.10); min-width: 220px; z-index: 100; padding: 4px; }
   .sheets-dropdown.open { display: block; }
   .sheets-dropdown-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: #374151; }
   .sheets-dropdown-item:hover { background: #f9fafb; }
@@ -345,7 +345,7 @@
     + Sheets
     <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
   </button>
-  <div class="sheets-dropdown" id="sheets-dropdown">
+  <div class="sheets-dropdown" id="sheets-dropdown" onmouseenter="showSheetsMenu()" onmouseleave="hideSheetsMenu()">
     <div class="sheets-dropdown-item" onclick="openProfileModal('Lookup')">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
       <div>
@@ -917,8 +917,16 @@ const COL_ALIASES = {
 
 let pModule = 'Lookup'; // 'Lookup' | 'Entries' | 'Variable'
 
-function showSheetsMenu() { document.getElementById('sheets-dropdown').classList.add('open'); }
-function hideSheetsMenu() { document.getElementById('sheets-dropdown').classList.remove('open'); }
+let _sheetsHideTimer = null;
+function showSheetsMenu() {
+  clearTimeout(_sheetsHideTimer);
+  document.getElementById('sheets-dropdown').classList.add('open');
+}
+function hideSheetsMenu() {
+  _sheetsHideTimer = setTimeout(() => {
+    document.getElementById('sheets-dropdown').classList.remove('open');
+  }, 120);
+}
 
 function openProfileModal(module) {
   pModule = module || 'Lookup';
