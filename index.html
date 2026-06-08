@@ -1010,7 +1010,7 @@ function handleSchemaFile(inp) {
       const normalized = normalizeColName(rawName);
       if (normalized !== rawName) pAiLog.push(`Renamed <strong>${rawName}</strong> → <strong>${normalized}</strong> (common alias match)`);
 
-      const type = inferColType(values);
+      const type = inferColType(values, normalized);
       const sampleVals = values.slice(0,3).map(v=>String(v)).join(', ');
       let aiNote = `Detected from "${rawName}" — inferred type: <strong>${type}</strong>`;
       if (sampleVals) aiNote += ` (sample values: ${sampleVals})`;
@@ -1037,12 +1037,21 @@ function normalizeColName(raw) {
   return COL_ALIASES[key] || raw;
 }
 
-function inferColType(values) {
-  if (!values.length) return 'Text';
+const DECIMAL_NAME_HINT = /decimal|dec|float|amount|amt|price|rate|ratio|pct|percent/i;
+const INTEGER_NAME_HINT  = /^(id|uid|key|code|count|num|number|integer|int|index|no)$/i;
+
+function inferColType(values, colName) {
+  const nameIsDecimal = colName && DECIMAL_NAME_HINT.test(colName);
+  const nameIsInteger = colName && INTEGER_NAME_HINT.test(colName);
+
+  if (!values.length) return nameIsDecimal ? 'Decimal Number' : 'Text';
   const strs = values.map(v => String(v).trim());
   const distinct = [...new Set(strs)];
   if (distinct.length <= 5 && values.length >= 3) return 'Dropdown';
-  if (strs.every(v => /^\s*-?\d+\s*$/.test(v))) return 'Whole Number';
+  // Values look like whole numbers — use column name as tiebreaker
+  if (strs.every(v => /^\s*-?\d+\s*$/.test(v))) {
+    return nameIsDecimal ? 'Decimal Number' : 'Whole Number';
+  }
   if (strs.every(v => !isNaN(parseFloat(v)) && isFinite(Number(v)))) return 'Decimal Number';
   if (strs.every(v => !isNaN(Date.parse(v)) && v.length > 4)) return 'Date';
   return 'Text';
