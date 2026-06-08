@@ -642,10 +642,6 @@ function buildMappingTable() {
     const current = userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : (m.fileCol || '');
     const isMissing = !current && m.required;
 
-    const howBadge = m.how
-      ? `<span class="pill ${m.how==='Exact name match'?'pill-green':m.how==='Similar name match'?'pill-yellow':'pill-gray'}" style="font-size:10px;">${m.how}</span>`
-      : `<span class="pill pill-red" style="font-size:10px;">Not found</span>`;
-
     const options = allOptions.map(h =>
       `<option value="${h}" ${h === current ? 'selected' : ''}>${h || '(not mapped)'}</option>`
     ).join('');
@@ -655,15 +651,13 @@ function buildMappingTable() {
         <div style="font-weight:500;font-size:13px;color:#111827;">${m.schemaName}</div>
         <div style="font-size:11px;color:#9ca3af;margin-top:1px;">${m.schemaLabel}${m.required ? ' · Required' : ' · Optional'}</div>
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid #f3f4f6;border-right:1px solid #e5e7eb;text-align:center;color:#9ca3af;">→</td>
-      <td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;border-right:1px solid #e5e7eb;">
+      <td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">
         <select
           style="width:100%;border:1px solid ${isMissing?'#fca5a5':'#e5e7eb'};border-radius:6px;padding:6px 8px;font-size:13px;background:${isMissing?'#fef2f2':'#fff'};color:#111827;outline:none;font-family:inherit;"
           onchange="updateMapping('${m.schemaName}', this.value)"
         >${options}</select>
         ${isMissing ? '<div style="font-size:11px;color:#dc2626;margin-top:3px;">Required — please select a column</div>' : ''}
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">${howBadge}</td>
     </tr>`;
   }).join('');
 
@@ -671,9 +665,7 @@ function buildMappingTable() {
     <thead>
       <tr style="background:#f9fafb;">
         <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">Schema Column</th>
-        <th style="padding:8px 14px;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;width:32px;"></th>
-        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">Your File Column</th>
-        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">How matched</th>
+        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">Matched to</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
