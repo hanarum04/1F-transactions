@@ -554,7 +554,7 @@ function upload(body, foot) {
   `);
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Detect Columns</button>
+    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Submit</button>
   `);
   const dz = document.getElementById('dz');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
@@ -595,7 +595,7 @@ function analyzing(body, foot) {
       <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Detecting columns…</div>
       <div style="font-size:12px;color:#6b7280;">Matching your file's columns to the schema.</div>
     </div>`);
-  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Detect Columns</button>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Submit</button>`);
 }
 
 /* ══════════════════════════════════════════════════
