@@ -384,7 +384,7 @@
 <!-- MODAL -->
 <div class="overlay" id="modal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">Upload Profile Data</div><button class="modal-close" onclick="closeModal()">&#x2715;</button></div>
+    <div class="modal-header"><div class="modal-title">Upload Lookup Data</div><button class="modal-close" onclick="closeModal()">&#x2715;</button></div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
   </div>
@@ -407,102 +407,96 @@
 
 <script>
 /* ══════════════════════════════════════════════════
-   SCHEMA  (defined per-profile, fixed for this prototype)
+   SCHEMA  (column names + required flag only)
 ═══════════════════════════════════════════════════ */
-const SCHEMA = {
-  number:  { type: 'integer',  required: true,  label: 'INTEGER · Required'  },
-  decimal: { type: 'decimal2', required: false, label: 'DECIMAL(2) · Optional' },
-};
-
-// Returns null if valid, error string if not
-const TYPE_CHECK = {
-  integer:  v => /^\s*-?\d+\s*$/.test(String(v)) ? null : 'Must be a whole number (e.g. 42)',
-  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(String(v)) ? null : 'Must be a number with up to 2 decimal places (e.g. 10.00)',
-};
-
-// Auto-format if value is valid but not yet in the right format
-function autoFormat(col, rawVal) {
-  if (rawVal === null || rawVal === undefined || rawVal === '') return null;
-  const s = String(rawVal).trim();
-  if (SCHEMA[col].type === 'decimal2') {
-    const n = parseFloat(s);
-    if (!isNaN(n)) {
-      const formatted = n.toFixed(2);
-      return formatted !== s ? formatted : null; // return formatted if different
-    }
-  }
-  return null;
-}
+const SCHEMA = [
+  { name: 'number',  label: 'INTEGER',    required: true  },
+  { name: 'decimal', label: 'DECIMAL(2)', required: false },
+];
 
 /* ══════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════ */
 let step = 'upload';
-let parsedColumns = [];  // ['number','decimal',...]
-let parsedRows = [];     // [{number:'3', decimal:null}, ...]
-let issues = [];         // computed from parsedRows + SCHEMA
-let userOverrides = {};  // { 'row-col': newValue }
+let fileHeaders  = [];     // column headers from uploaded file
+let colMappings  = [];     // result of matchColumns()
+let userMappings = {};     // schemaColName → chosen fileHeader (user overrides)
 
 /* ══════════════════════════════════════════════════
-   FILE PARSING (SheetJS)
+   FILE PARSING — headers only (SheetJS)
 ═══════════════════════════════════════════════════ */
-function parseXlsx(file, cb) {
+function parseHeaders(file, cb) {
   const reader = new FileReader();
   reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
+    const wb  = XLSX.read(e.target.result, { type: 'array' });
+    const ws  = wb.Sheets[wb.SheetNames[0]];
     const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-    if (raw.length < 1) { cb([], []); return; }
-    const headers = raw[0].map(h => h === null ? '' : String(h).trim());
-    const rows = raw.slice(1).map(r =>
-      Object.fromEntries(headers.map((h, i) => [h, r[i] === undefined ? null : r[i]]))
-    );
-    cb(headers, rows);
+    const headers = (raw[0] || []).map(h => h === null ? '' : String(h).trim()).filter(Boolean);
+    cb(headers);
   };
   reader.readAsArrayBuffer(file);
 }
 
 /* ══════════════════════════════════════════════════
-   AI ANALYSIS ENGINE
+   COLUMN MATCHING ENGINE
 ═══════════════════════════════════════════════════ */
-function analyzeData(columns, rows) {
-  const found = [];
-  rows.forEach((row, ri) => {
-    const rowNum = ri + 1;
-    columns.forEach(col => {
-      if (!SCHEMA[col]) return; // unknown column, skip
-      const raw = row[col];
-      const isEmpty = raw === null || raw === undefined || raw === '';
+// Common aliases: normalize both sides and compare
+const ALIASES = {
+  userid:'uid', user_id:'uid', user_no:'uid',
+  empid:'employee_id', emp_id:'employee_id',
+  acctno:'account_number', acct_no:'account_number', account_no:'account_number',
+  col:'column', num:'number', dec:'decimal', amt:'amount',
+};
 
-      if (isEmpty) {
-        if (SCHEMA[col].required) {
-          found.push({ row: rowNum, col, original: null, fixed: null, canFix: false, reason: 'Required field is empty — intended value is unknown.' });
-        }
-        // optional + empty = fine, no issue
-        return;
-      }
+function normalize(s) {
+  const k = s.toLowerCase().replace(/[\s_\-\.]+/g, '');
+  return ALIASES[k] || k;
+}
 
-      const s = String(raw).trim();
-      const typeErr = TYPE_CHECK[SCHEMA[col].type] ? TYPE_CHECK[SCHEMA[col].type](s) : null;
-      if (typeErr) {
-        found.push({ row: rowNum, col, original: raw, fixed: null, canFix: false, reason: `Text value in a ${SCHEMA[col].type === 'integer' ? 'number' : 'decimal'} column — cannot determine the intended value.` });
-        return;
-      }
+function matchColumns(schema, headers) {
+  const used = new Set();
 
-      // Valid type — check if auto-formatting needed
-      const formatted = autoFormat(col, raw);
-      if (formatted !== null) {
-        found.push({ row: rowNum, col, original: raw, fixed: formatted, canFix: true, reason: `Formatted to 2 decimal places per schema.` });
-      }
-    });
+  return schema.map((col, si) => {
+    const normSchema = normalize(col.name);
+
+    // 1. Exact name match (case-insensitive)
+    let idx = headers.findIndex((h, i) => !used.has(i) && h.toLowerCase() === col.name.toLowerCase());
+    let how = 'Exact name match';
+
+    // 2. Normalized / alias match
+    if (idx === -1) {
+      idx = headers.findIndex((h, i) => !used.has(i) && normalize(h) === normSchema);
+      how = 'Similar name match';
+    }
+
+    // 3. Position fallback — same column index
+    if (idx === -1 && si < headers.length && !used.has(si)) {
+      idx = si;
+      how = 'Position match';
+    }
+
+    if (idx !== -1) used.add(idx);
+
+    return {
+      schemaName: col.name,
+      schemaLabel: col.label,
+      required: col.required,
+      fileCol: idx !== -1 ? headers[idx] : null,
+      fileIdx: idx,
+      how: idx !== -1 ? how : null,
+      matched: idx !== -1,
+    };
   });
-  return found;
 }
 
 /* ══════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════ */
-function openModal() { step = 'upload'; userOverrides = {}; document.getElementById('modal').classList.add('open'); render(); }
+function openModal() {
+  step = 'upload'; fileHeaders = []; colMappings = []; userMappings = {};
+  document.getElementById('modal').classList.add('open');
+  render();
+}
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function goStep(s) { step = s; render(); }
 function fmt(b) { if (b < 1024) return b+'B'; if (b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
@@ -515,23 +509,23 @@ function render() {
   const foot = document.getElementById('modal-footer');
   body.innerHTML = foot.innerHTML = '';
   body.insertAdjacentHTML('beforeend', buildStepper());
-  ({ upload, analyzing, review, success }[step] || (()=>{}))(body, foot);
+  ({ upload, analyzing, mapping, success }[step] || (()=>{}))(body, foot);
 }
 
 function buildStepper() {
   const defs = [
-    { key:'upload',  label:'Upload',         sub:'Select file'     },
-    { key:'review',  label:'AI Review',       sub:'Review & edit'   },
-    { key:'success', label:'Submit',           sub:'Complete upload' },
+    { key:'upload',  label:'Upload'         },
+    { key:'mapping', label:'Column Mapping'  },
+    { key:'success', label:'Submit'          },
   ];
-  const order = ['upload','analyzing','review','success'];
+  const order = ['upload','analyzing','mapping','success'];
   const cur = order.indexOf(step);
   let h = '<div class="stepper">';
   defs.forEach((d, i) => {
     const rank = order.indexOf(d.key);
-    const cls = rank < cur ? 'done' : (rank === cur || (d.key==='review' && step==='analyzing')) ? 'active' : 'pending';
+    const cls = rank < cur ? 'done' : (rank === cur || (d.key==='mapping' && step==='analyzing')) ? 'active' : 'pending';
     if (i > 0) h += `<div class="step-line ${rank <= cur ? 'done':''}"></div>`;
-    h += `<div class="step"><div class="step-circle sc-${cls}">${cls==='done'?'✓':i+1}</div><div><div class="step-label sl-${cls}">${d.label}</div><div class="step-sub">${d.sub}</div></div></div>`;
+    h += `<div class="step"><div class="step-circle sc-${cls}">${cls==='done'?'✓':i+1}</div><div><div class="step-label sl-${cls}">${d.label}</div></div></div>`;
   });
   return h + '</div>';
 }
@@ -560,7 +554,7 @@ function upload(body, foot) {
   `);
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Analyse with AI</button>
+    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Detect Columns</button>
   `);
   const dz = document.getElementById('dz');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
@@ -584,14 +578,13 @@ function fileChosen(inp) {
 function startAnalysis() {
   goStep('analyzing');
   if (_pendingFile) {
-    parseXlsx(_pendingFile, (cols, rows) => {
-      parsedColumns = cols;
-      parsedRows = rows;
-      issues = analyzeData(cols, rows);
-      goStep('review');
+    parseHeaders(_pendingFile, headers => {
+      fileHeaders = headers;
+      colMappings = matchColumns(SCHEMA, headers);
+      goStep('mapping');
     });
   } else {
-    setTimeout(() => goStep('review'), 1800);
+    setTimeout(() => goStep('mapping'), 1400);
   }
 }
 
@@ -599,268 +592,120 @@ function analyzing(body, foot) {
   body.insertAdjacentHTML('beforeend', `
     <div class="spinner-wrap">
       <div class="spinner"></div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Reviewing your file…</div>
-      <div style="font-size:12px;color:#6b7280;">Checking column types and data formats against your schema.</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Detecting columns…</div>
+      <div style="font-size:12px;color:#6b7280;">Matching your file's columns to the schema.</div>
     </div>`);
-  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Analyse with AI</button>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Detect Columns</button>`);
 }
 
 /* ══════════════════════════════════════════════════
-   STEP: REVIEW & EDIT  (merged AI Review + Confirm)
+   STEP: COLUMN MAPPING
 ═══════════════════════════════════════════════════ */
-function review(body, foot) {
-  const auto = issues.filter(x => x.canFix);
-  const manual = issues.filter(x => !x.canFix);
+function mapping(body, foot) {
+  const unmatched = colMappings.filter(m => !m.matched && m.required);
+  const autoMatched = colMappings.filter(m => m.matched);
+  const extra = fileHeaders.filter((h, i) => !colMappings.some(m => m.fileIdx === i));
 
   body.insertAdjacentHTML('beforeend', `
     <div class="info-bar">
       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>AI found <strong>${issues.length} issue(s)</strong> across <strong>${parsedRows.length} row(s)</strong>.
-        <span class="pill pill-green" style="margin-left:4px;">${auto.length} auto-corrected</span>
-        <span class="pill pill-red" style="margin-left:4px;">${manual.length} need your input</span>
+      <span>
+        AI matched <strong>${autoMatched.length} of ${SCHEMA.length}</strong> schema column(s) from your file.
+        ${unmatched.length ? `<span class="pill pill-red" style="margin-left:4px;">${unmatched.length} required column(s) unmatched</span>` : '<span class="pill pill-green" style="margin-left:4px;">All required columns found</span>'}
       </span>
     </div>
 
-    ${buildSchemaSection()}
-
-    <div class="sh" style="margin-bottom:8px;">Review & edit data</div>
-    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
-      Yellow cells need your input. AI-corrected cells show before &rarr; after — click
-      <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-      to override. Notes column stays visible as you scroll.
+    <div class="sh" style="margin-bottom:8px;">Column mapping</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;">
+      AI matched your file's columns to the schema by name and position. Adjust any mapping using the dropdowns if needed.
     </div>
-    ${buildGrid()}
+
+    ${buildMappingTable()}
+
+    ${extra.length ? `
+    <div style="margin-top:14px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;color:#6b7280;">
+      <strong style="color:#374151;">Extra columns in your file</strong> (will be ignored): ${extra.map(h=>`<code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-family:monospace;">${h}</code>`).join(' ')}
+    </div>` : ''}
   `);
 
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeModal()">Cancel</button>
     <button class="btn" onclick="goStep('upload')">Back</button>
-    <button class="btn btn-primary" onclick="doSubmit()">Confirm and Submit</button>
+    <button class="btn btn-primary" onclick="doSubmit()">Confirm and Upload</button>
   `);
-
-  initScrollIndicator();
 }
 
-/* ── Schema collapsible ── */
-function buildSchemaSection() {
-  const cols = parsedColumns.filter(c => SCHEMA[c]);
-  if (!cols.length) return '';
+function buildMappingTable() {
+  const allOptions = ['(not mapped)', ...fileHeaders];
 
-  let rows = '';
-  cols.forEach(col => {
-    const colIssues = issues.filter(x => x.col === col);
-    const hasManual = colIssues.some(x => !x.canFix);
-    const hasAuto   = colIssues.some(x => x.canFix);
-    const indCls = !colIssues.length ? 'ind-green' : hasManual ? 'ind-red' : 'ind-yellow';
-    const pillCls = !colIssues.length ? 'pill-green' : hasManual ? 'pill-red' : 'pill-yellow';
+  let rows = colMappings.map(m => {
+    const current = userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : (m.fileCol || '');
+    const isMissing = !current && m.required;
 
-    let detail = '';
-    if (!colIssues.length) {
-      detail = `All values are valid.`;
-    } else {
-      const manualRows = colIssues.filter(x=>!x.canFix).map(x=>x.row);
-      const autoRows   = colIssues.filter(x=>x.canFix).map(x=>x.row);
-      if (manualRows.length) detail += `<span class="err">Row(s) ${manualRows.join(', ')}</span> have invalid or empty values — your input is required.<br>`;
-      if (autoRows.length)   detail += `Row(s) ${autoRows.join(', ')} <span class="ok">auto-corrected by AI</span>.`;
-    }
+    const howBadge = m.how
+      ? `<span class="pill ${m.how==='Exact name match'?'pill-green':m.how==='Similar name match'?'pill-yellow':'pill-gray'}" style="font-size:10px;">${m.how}</span>`
+      : `<span class="pill pill-red" style="font-size:10px;">Not found</span>`;
 
-    rows += `<div class="check-row">
-      <div class="ind ${indCls}"></div>
-      <div>
-        <div class="check-col">${col} <span class="pill ${pillCls}">${SCHEMA[col].label}</span></div>
-        <div class="check-detail">${detail}</div>
-      </div>
-    </div>`;
-  });
+    const options = allOptions.map(h =>
+      `<option value="${h}" ${h === current ? 'selected' : ''}>${h || '(not mapped)'}</option>`
+    ).join('');
 
-  return `
-    <div class="schema-section">
-      <div class="schema-toggle" onclick="toggleSchema(this)">
-        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
-        Schema check — ${parsedColumns.filter(c=>SCHEMA[c]).length} column(s) analysed
-      </div>
-      <div class="schema-body" id="schema-body">${rows}</div>
-    </div>`;
+    return `<tr${isMissing ? ' style="background:#fff9f9;"' : ''}>
+      <td style="padding:10px 14px;border-bottom:1px solid #f3f4f6;border-right:1px solid #e5e7eb;">
+        <div style="font-weight:500;font-size:13px;color:#111827;">${m.schemaName}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:1px;">${m.schemaLabel}${m.required ? ' · Required' : ' · Optional'}</div>
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid #f3f4f6;border-right:1px solid #e5e7eb;text-align:center;color:#9ca3af;">→</td>
+      <td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;border-right:1px solid #e5e7eb;">
+        <select
+          style="width:100%;border:1px solid ${isMissing?'#fca5a5':'#e5e7eb'};border-radius:6px;padding:6px 8px;font-size:13px;background:${isMissing?'#fef2f2':'#fff'};color:#111827;outline:none;font-family:inherit;"
+          onchange="updateMapping('${m.schemaName}', this.value)"
+        >${options}</select>
+        ${isMissing ? '<div style="font-size:11px;color:#dc2626;margin-top:3px;">Required — please select a column</div>' : ''}
+      </td>
+      <td style="padding:10px 14px;border-bottom:1px solid #f3f4f6;">${howBadge}</td>
+    </tr>`;
+  }).join('');
+
+  return `<table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+    <thead>
+      <tr style="background:#f9fafb;">
+        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">Schema Column</th>
+        <th style="padding:8px 14px;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;width:32px;"></th>
+        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">Your File Column</th>
+        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">How matched</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
-function toggleSchema(el) {
-  const body = document.getElementById('schema-body');
-  const chev = document.getElementById('schema-chevron');
-  const open = body.classList.toggle('open');
-  chev.style.transform = open ? 'rotate(90deg)' : '';
-}
-
-/* ── Review grid ── */
-function buildGrid() {
-  if (!parsedColumns.length) return '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:24px;">No data to display.</div>';
-
-  const dataCols = parsedColumns; // all columns from file
-
-  let headerCells = '<th>#</th>';
-  dataCols.forEach(col => { headerCells += `<th>${col}</th>`; });
-  headerCells += '<th class="col-notes">Notes</th>';
-
-  let bodyRows = '';
-  parsedRows.forEach((row, ri) => {
-    const rn = ri + 1;
-    const rowIssues = issues.filter(x => x.row === rn);
-    let cells = `<td class="grid-rn">${rn}</td>`;
-
-    dataCols.forEach(col => {
-      const issue = rowIssues.find(x => x.col === col);
-      const key = `${rn}-${col}`;
-      cells += '<td>';
-      if (!issue) {
-        const v = row[col];
-        if (v === null || v === undefined || v === '') {
-          cells += '<div class="cell-ok cell-empty">—</div>';
-        } else {
-          cells += `<div class="cell-ok">${v}</div>`;
-        }
-      } else if (issue.canFix) {
-        // AI-corrected: show before→after with pencil to override
-        const overrideVal = userOverrides[key];
-        if (overrideVal !== undefined) {
-          // User already overrode — show as editable input
-          cells += buildEditableCell(rn, col, issue, overrideVal);
-        } else {
-          cells += `<div class="cell-corrected">
-            <span class="val-del" style="font-size:11px;">${issue.original}</span>
-            <span class="val-arrow">→</span>
-            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
-            <button class="cell-pencil" title="Edit AI correction" onclick="overrideCell(${rn},'${col}',event)">
-              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            </button>
-          </div>`;
-        }
-      } else {
-        cells += buildEditableCell(rn, col, issue, '');
-      }
-      cells += '</td>';
-    });
-
-    // Notes (sticky right)
-    let notes = '';
-    rowIssues.forEach(iss => {
-      const dotCls = iss.canFix ? 'nd-yellow' : 'nd-red';
-      notes += `<div class="note-line"><div class="note-dot ${dotCls}"></div><span><strong>${iss.col}:</strong> ${iss.reason}</span></div>`;
-    });
-    if (!notes) notes = '';
-
-    cells += `<td class="col-notes">${notes}</td>`;
-    bodyRows += `<tr>${cells}</tr>`;
-  });
-
-  return `
-    <div class="grid-outer" id="grid-outer">
-      <div class="grid-scroll" id="grid-scroll">
-        <table class="grid-tbl">
-          <thead><tr>${headerCells}</tr></thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-      </div>
-      <div class="scroll-ind" id="scroll-ind">
-        <div class="scroll-ind-inner">
-          <div class="scroll-arr" onclick="document.getElementById('grid-scroll').scrollBy({top:100,behavior:'smooth'})">
-            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
-            More rows below
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
-function buildEditableCell(rn, col, issue, currentVal) {
-  const orig = (issue.original === null || issue.original === '') ? '' : issue.original;
-  const placeholder = orig ? `Was: ${orig}` : 'Enter value…';
-  return `<div class="cell-need-wrap">
-    <input type="text" class="cell-input" id="e-${rn}-${col}"
-      value="${currentVal}"
-      placeholder="${placeholder}"
-      data-row="${rn}" data-col="${col}"
-      oninput="validateCell(this)" onblur="validateCell(this)">
-    <div class="cell-err-tip" id="err-${rn}-${col}"></div>
-  </div>`;
-}
-
-function overrideCell(row, col, evt) {
-  evt.stopPropagation();
-  const issue = issues.find(x => x.row === row && x.col === col);
-  if (!issue) return;
-  userOverrides[`${row}-${col}`] = issue.fixed; // seed with AI value
-  // Re-render just the review step body (keep footer)
+function updateMapping(schemaName, fileCol) {
+  userMappings[schemaName] = fileCol;
+  // Re-render the mapping table only
   const body = document.getElementById('modal-body');
   const foot = document.getElementById('modal-footer');
-  body.innerHTML = '';
+  body.innerHTML = foot.innerHTML = '';
   body.insertAdjacentHTML('beforeend', buildStepper());
-  review(body, { insertAdjacentHTML: () => {} }); // body only
-  // re-focus the newly created input
-  setTimeout(() => {
-    const inp = document.getElementById(`e-${row}-${col}`);
-    if (inp) { inp.select(); inp.focus(); }
-  }, 30);
-}
-
-/* ── Validators ── */
-const INPUT_VALIDATORS = {
-  integer:  v => /^\s*-?\d+\s*$/.test(v)              ? null : 'Must be a whole number (e.g. 42)',
-  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(v) ? null : 'Must be a number with up to 2 decimal places',
-};
-
-function validateCell(inp) {
-  const row = inp.dataset.row;
-  const col = inp.dataset.col;
-  const val = inp.value.trim();
-  const errEl = document.getElementById(`err-${row}-${col}`);
-  if (!val) {
-    inp.classList.remove('has-error');
-    if (errEl) errEl.textContent = '';
-    return;
-  }
-  const schemaType = SCHEMA[col] ? SCHEMA[col].type : null;
-  const msg = schemaType && INPUT_VALIDATORS[schemaType] ? INPUT_VALIDATORS[schemaType](val) : null;
-  if (msg) {
-    inp.classList.add('has-error');
-    if (errEl) errEl.textContent = msg;
-  } else {
-    inp.classList.remove('has-error');
-    if (errEl) errEl.textContent = '';
-    userOverrides[`${row}-${col}`] = val;
-  }
-}
-
-/* ── Scroll indicator ── */
-function initScrollIndicator() {
-  setTimeout(() => {
-    const scr = document.getElementById('grid-scroll');
-    const ind = document.getElementById('scroll-ind');
-    if (!scr || !ind) return;
-    const update = () => ind.classList.toggle('visible', scr.scrollHeight > scr.clientHeight + scr.scrollTop + 4);
-    update();
-    scr.addEventListener('scroll', update);
-  }, 60);
+  mapping(body, foot);
 }
 
 /* ── Submit ── */
 function doSubmit() {
-  let hasError = false;
-  // Validate all manual-input fields
-  issues.filter(x => !x.canFix).forEach(c => {
-    const inp = document.getElementById(`e-${c.row}-${c.col}`);
-    if (!inp) return;
-    validateCell(inp);
-    if (inp.classList.contains('has-error')) { hasError = true; return; }
-    if (!inp.value.trim()) {
-      inp.classList.add('has-error');
-      const errEl = document.getElementById(`err-${c.row}-${c.col}`);
-      if (errEl) errEl.textContent = 'This field is required.';
-      hasError = true;
-    }
-  });
-  if (hasError) {
-    // scroll to first error
-    const firstErr = document.querySelector('.cell-input.has-error');
-    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Check all required schema columns have a mapping
+  const effective = colMappings.map(m => ({
+    ...m,
+    fileCol: userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : m.fileCol,
+  }));
+  const missingRequired = effective.filter(m => m.required && !m.fileCol);
+  if (missingRequired.length) {
+    // Re-render to show errors
+    userMappings = Object.fromEntries(effective.map(m => [m.schemaName, m.fileCol || '']));
+    const body = document.getElementById('modal-body');
+    const foot = document.getElementById('modal-footer');
+    body.innerHTML = foot.innerHTML = '';
+    body.insertAdjacentHTML('beforeend', buildStepper());
+    mapping(body, foot);
     return;
   }
   goStep('success');
@@ -1244,19 +1089,24 @@ function renderPStep3(body, foot) {
    STEP: SUCCESS
 ═══════════════════════════════════════════════════ */
 function success(body, foot) {
-  const auto = issues.filter(x => x.canFix).length;
-  const manual = issues.filter(x => !x.canFix).length;
+  const effective = colMappings.map(m => ({
+    schema: m.schemaName,
+    file: userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : m.fileCol,
+    how: m.how,
+  }));
+  const mappingRows = effective.map(m =>
+    `<tr><td style="padding:6px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;font-weight:500;">${m.schema}</td><td style="padding:6px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#9ca3af;">→</td><td style="padding:6px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;">${m.file || '—'}</td></tr>`
+  ).join('');
+
   body.insertAdjacentHTML('beforeend', `
     <div class="success-wrap">
       <div class="success-ring"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#16a34a"><path d="M5 13l4 4L19 7"/></svg></div>
       <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Upload successful</div>
-      <div style="font-size:13px;color:#6b7280;">Your data has been corrected and submitted.</div>
-      <div class="success-summary">
-        Rows processed: <strong>${parsedRows.length}</strong><br>
-        AI auto-corrections: <strong>${auto}</strong><br>
-        Manual corrections: <strong>${manual}</strong><br>
-        Final rows submitted: <strong>${parsedRows.length}</strong>
-      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Columns matched and data submitted successfully.</div>
+      <table style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;text-align:left;min-width:280px;">
+        <thead><tr style="background:#f9fafb;"><th style="padding:7px 12px;font-size:11px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">Schema</th><th style="border-bottom:1px solid #e5e7eb;"></th><th style="padding:7px 12px;font-size:11px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">Your File</th></tr></thead>
+        <tbody>${mappingRows}</tbody>
+      </table>
     </div>`);
   foot.insertAdjacentHTML('beforeend', `<button class="btn btn-primary" onclick="closeModal()">Done</button>`);
 }
