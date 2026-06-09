@@ -613,11 +613,17 @@ function mapping(body, foot) {
 
   body.insertAdjacentHTML('beforeend', `
     <div class="info-bar">
-      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>
-        AI matched <strong>${autoMatched.length} of ${SCHEMA.length}</strong> schema column(s) from your file.
-        ${unmatched.length ? `<span class="pill pill-red" style="margin-left:4px;">${unmatched.length} required column(s) unmatched</span>` : ''}
-      </span>
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span>
+          AI matched <strong>${autoMatched.length} of ${SCHEMA.length}</strong> schema column(s) from your file.
+          ${unmatched.length ? `<span class="pill pill-red" style="margin-left:4px;">${unmatched.length} required column(s) unmatched</span>` : ''}
+        </span>
+        ${extra.length ? `<span style="font-size:12px;">
+          <strong style="color:#1e40af;">Extra columns ignored:</strong>
+          ${extra.map(h=>`<code style="background:#dbeafe;color:#1e40af;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:11px;">${h}</code>`).join(' ')}
+        </span>` : ''}
+      </div>
     </div>
 
     <div class="sh" style="margin-bottom:8px;">Column mapping</div>
@@ -626,11 +632,6 @@ function mapping(body, foot) {
     </div>
 
     ${buildMappingTable()}
-
-    ${extra.length ? `
-    <div style="margin-top:14px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;color:#6b7280;">
-      <strong style="color:#374151;">Extra columns in your file</strong> (will be ignored): ${extra.map(h=>`<code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-family:monospace;">${h}</code>`).join(' ')}
-    </div>` : ''}
   `);
 
   foot.insertAdjacentHTML('beforeend', `
