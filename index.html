@@ -642,14 +642,14 @@ function mapping(body, foot) {
 }
 
 function buildMappingTable() {
-  const allOptions = ['(not mapped)', ...fileHeaders];
+  const allOptions = [...fileHeaders];
 
   let rows = colMappings.map(m => {
     const current = userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : (m.fileCol || '');
     const isMissing = !current && m.required;
 
     const options = allOptions.map(h =>
-      `<option value="${h}" ${h === current ? 'selected' : ''}>${h || '(not mapped)'}</option>`
+      `<option value="${h}" ${h === current ? 'selected' : ''}>${h}</option>`
     ).join('');
 
     return `<tr${isMissing ? ' style="background:#fff9f9;"' : ''}>
