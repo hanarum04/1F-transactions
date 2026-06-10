@@ -237,13 +237,13 @@
   .col-card-type { font-size: 10px; color: #6b7280; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
   .col-card-ai { width: 6px; height: 6px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
   .col-card-drag { color: #d1d5db; cursor: grab; flex-shrink: 0; }
-  .col-card-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
-  .col-card:hover .col-card-actions { opacity: 1; }
-  .col-card.active .col-card-actions { opacity: 1; }
-  .col-card-action-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 2px 3px; border-radius: 3px; line-height: 1; display: flex; align-items: center; }
-  .col-card-action-btn:hover:not(:disabled) { background: #e5e7eb; color: #374151; }
-  .col-card-action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  .col-card-delete-btn:hover:not(:disabled) { background: #fee2e2; color: #dc2626; }
+  .col-card-chevrons { display: flex; flex-direction: column; gap: 0px; flex-shrink: 0; }
+  .col-card-chev-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 1px 2px; line-height: 1; display: flex; align-items: center; border-radius: 2px; }
+  .col-card-chev-btn:hover:not(:disabled) { color: #374151; }
+  .col-card-chev-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .col-card-type-icon { color: #9ca3af; flex-shrink: 0; display: flex; align-items: center; }
+  .col-card-delete-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 3px 4px; border-radius: 4px; line-height: 1; display: flex; align-items: center; flex-shrink: 0; }
+  .col-card-delete-btn:hover { background: #fee2e2; color: #dc2626; }
 
   .col-config-panel { flex: 1; overflow-y: auto; padding: 20px 24px; }
   .col-config-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 16px; }
@@ -954,19 +954,23 @@ function buildColListPanel() {
   let items = '';
   pCols.forEach((col, i) => {
     const activeCls = i === pActive ? ' active' : '';
-    const aiDot = col.aiInferred ? '<div class="col-card-ai" title="AI detected"></div>' : '';
     const icon = TYPE_ICONS[col.type] || TYPE_ICONS['Text'];
+    const keyIcon = col.isKey ? `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#1d4ed8" stroke-width="1.8" style="flex-shrink:0"><circle cx="6" cy="7" r="3.5"/><path d="M8.5 7h5M11.5 7v2"/></svg>` : '';
     items += `<div class="col-card${activeCls}" onclick="pActive=${i};rerenderSchema()">
-      <div class="col-card-icon">${icon}</div>
-      <div class="col-card-name">${col.name || 'Untitled Column'}</div>
-      <div class="col-card-type">${col.type}</div>
-      <div class="col-card-actions" onclick="event.stopPropagation()">
-        <button class="col-card-action-btn" title="Move up" onclick="moveCol(${i},-1)" ${i===0?'disabled':''}>&#8593;</button>
-        <button class="col-card-action-btn" title="Move down" onclick="moveCol(${i},1)" ${i===pCols.length-1?'disabled':''}>&#8595;</button>
-        <button class="col-card-action-btn col-card-delete-btn" title="Delete column" onclick="deleteCol(${i})">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,4 13,4"/><path d="M5,4V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4"/><path d="M6,7v5M10,7v5"/><rect x="4" y="4" width="8" height="9" rx="1"/></svg>
+      <div class="col-card-chevrons" onclick="event.stopPropagation()">
+        <button class="col-card-chev-btn" title="Move up" onclick="moveCol(${i},-1)" ${i===0?'disabled':''}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,7 5,3 8,7"/></svg>
+        </button>
+        <button class="col-card-chev-btn" title="Move down" onclick="moveCol(${i},1)" ${i===pCols.length-1?'disabled':''}>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 5,7 8,3"/></svg>
         </button>
       </div>
+      <div class="col-card-name">${col.name || 'Untitled Column'}</div>
+      ${keyIcon}
+      <div class="col-card-type-icon" title="${col.type}">${icon}</div>
+      <button class="col-card-delete-btn" title="Delete column" onclick="event.stopPropagation();deleteCol(${i})">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,4 13,4"/><path d="M5,4V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4"/><path d="M6,7v5M10,7v5"/><rect x="4" y="4" width="8" height="9" rx="1"/></svg>
+      </button>
     </div>`;
   });
 
