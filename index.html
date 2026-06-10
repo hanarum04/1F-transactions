@@ -12,8 +12,8 @@
 
   /* ── App shell ── */
   .app { display: flex; height: 100vh; overflow: hidden; flex-direction: column; }
-  .topbar { background: #f9fafb; border-bottom: 1px solid #e5e7eb; padding: 0 20px 0 0; height: 48px; display: flex; align-items: center; flex-shrink: 0; }
-  .topbar-logo { width: 208px; flex-shrink: 0; font-weight: 700; font-size: 14px; color: #111827; padding: 0 16px; display: flex; align-items: center; height: 100%; border-right: 1px solid #e5e7eb; }
+  .topbar { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 0 20px 0 16px; height: 48px; display: flex; align-items: center; flex-shrink: 0; }
+  .topbar-logo { flex-shrink: 0; font-weight: 700; font-size: 14px; color: #111827; padding-right: 24px; display: flex; align-items: center; height: 100%; }
   .topbar-nav { display: flex; flex: 1; }
   .topbar-nav a { padding: 0 14px; height: 48px; display: flex; align-items: center; font-size: 13px; color: #6b7280; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .topbar-nav a.active { color: #1d4ed8; border-bottom-color: #1d4ed8; font-weight: 500; }
@@ -22,11 +22,11 @@
   .topbar-right-btn:hover { background: #f3f4f6; color: #374151; }
   .topbar-right-divider { width: 1px; height: 20px; background: #e5e7eb; margin: 0 4px; }
   .avatar { width: 28px; height: 28px; border-radius: 50%; background: #dc2626; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
-  .app-body { display: flex; flex: 1; overflow: hidden; }
-  .sidebar { width: 208px; background: #fff; border-right: 1px solid #e5e7eb; flex-shrink: 0; display: flex; flex-direction: column; }
+  .app-body { display: flex; flex: 1; overflow: hidden; background: #f6f6f6; }
+  .sidebar { width: 208px; background: #f6f6f6; border-right: 1px solid #e5e7eb; flex-shrink: 0; display: flex; flex-direction: column; }
   .sidebar-section { padding: 16px 16px 4px; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .6px; }
   .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 16px; cursor: pointer; color: #374151; font-size: 13px; }
-  .sidebar-item:hover { background: #f9fafb; }
+  .sidebar-item:hover { background: #ebebeb; }
   .sidebar-item.active { background: #eff6ff; color: #1d4ed8; }
   .sidebar-item svg { flex-shrink: 0; opacity: .65; }
   .sidebar-item.active svg { opacity: 1; }
@@ -323,10 +323,7 @@
       <a href="#">Access</a>
     </nav>
     <div class="topbar-right">
-      <button class="topbar-right-btn">
-        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-        Help
-      </button>
+      <button class="topbar-right-btn">Help</button>
       <button class="topbar-right-btn">
         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 12l-4 4-4-4M12 4v12"/></svg>
       </button>
