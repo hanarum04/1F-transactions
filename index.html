@@ -237,6 +237,13 @@
   .col-card-type { font-size: 10px; color: #6b7280; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
   .col-card-ai { width: 6px; height: 6px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
   .col-card-drag { color: #d1d5db; cursor: grab; flex-shrink: 0; }
+  .col-card-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+  .col-card:hover .col-card-actions { opacity: 1; }
+  .col-card.active .col-card-actions { opacity: 1; }
+  .col-card-action-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 2px 3px; border-radius: 3px; line-height: 1; display: flex; align-items: center; }
+  .col-card-action-btn:hover:not(:disabled) { background: #e5e7eb; color: #374151; }
+  .col-card-action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .col-card-delete-btn:hover:not(:disabled) { background: #fee2e2; color: #dc2626; }
 
   .col-config-panel { flex: 1; overflow-y: auto; padding: 20px 24px; }
   .col-config-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 16px; }
@@ -671,7 +678,7 @@ function buildMappingTable() {
     <thead>
       <tr style="background:#f9fafb;">
         <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">Schema Column</th>
-        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">Matched to</th>
+        <th style="padding:8px 14px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">File Column</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -953,7 +960,13 @@ function buildColListPanel() {
       <div class="col-card-icon">${icon}</div>
       <div class="col-card-name">${col.name || 'Untitled Column'}</div>
       <div class="col-card-type">${col.type}</div>
-      ${aiDot}
+      <div class="col-card-actions" onclick="event.stopPropagation()">
+        <button class="col-card-action-btn" title="Move up" onclick="moveCol(${i},-1)" ${i===0?'disabled':''}>&#8593;</button>
+        <button class="col-card-action-btn" title="Move down" onclick="moveCol(${i},1)" ${i===pCols.length-1?'disabled':''}>&#8595;</button>
+        <button class="col-card-action-btn col-card-delete-btn" title="Delete column" onclick="deleteCol(${i})">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,4 13,4"/><path d="M5,4V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4"/><path d="M6,7v5M10,7v5"/><rect x="4" y="4" width="8" height="9" rx="1"/></svg>
+        </button>
+      </div>
     </div>`;
   });
 
@@ -992,7 +1005,6 @@ function buildColConfigPanel() {
 
   return `<div class="col-config-panel">
     <div class="col-config-title">Configure Column</div>
-    ${col.aiInferred && col.aiNote ? `<div style="font-size:11px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;margin-bottom:14px;line-height:1.6;">${col.aiNote}</div>` : ''}
     <div class="form-field">
       <div class="form-label"><span class="req">*</span> Column Name</div>
       <input class="form-input" placeholder="e.g., Account Number" value="${col.name}" oninput="updateCol(${pActive},'name',this.value)">
@@ -1063,6 +1075,7 @@ function makeCol(overrides={}) {
 }
 function addManualCol() { pCols.push(makeCol()); pActive = pCols.length-1; rerenderSchema(); }
 function deleteCol(i) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} rerenderSchema(); }
+function moveCol(i, dir) { const j = i + dir; if (j < 0 || j >= pCols.length) return; [pCols[i], pCols[j]] = [pCols[j], pCols[i]]; pActive = j; rerenderSchema(); }
 function updateCol(i, key, val) { pCols[i][key] = val; }
 function setColType(i, type) { pCols[i].type = type; rerenderSchema(); }
 
