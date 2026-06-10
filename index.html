@@ -48,12 +48,11 @@
   .btn-row { display: flex; gap: 8px; }
 
   /* ── Cards ── */
-  .card { background: #fff; border-top: 1px solid #e5e7eb; overflow: hidden; }
-  .card:first-of-type { border-top: none; }
-  .card-header { padding: 11px 16px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; }
+  .card { background: #fff; overflow: hidden; }
+  .card-header { padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; }
   .card-header-left { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; color: #374151; }
   .card-body { padding: 16px; color: #6b7280; font-size: 13px; }
-  .table-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  .table-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
   .table-bar input { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 10px; font-size: 12px; width: 180px; color: #374151; outline: none; background: #f9fafb; }
   .icon-row { display: flex; gap: 4px; align-items: center; }
   .icon-btn { width: 28px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b7280; }
@@ -63,11 +62,8 @@
 
   /* Summary table */
   .stbl { width: 100%; border-collapse: collapse; }
-  .stbl th { padding: 8px 14px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; background: #fafafa; }
-  .stbl th:last-child { border-right: none; }
-  .stbl td { padding: 8px 14px; border-bottom: 1px solid #f3f4f6; border-right: 1px solid #e5e7eb; color: #111827; font-size: 13px; text-align: left; }
-  .stbl td:last-child { border-right: none; }
-  .stbl tr:last-child td { border-bottom: none; }
+  .stbl th { padding: 8px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; background: #fafafa; }
+  .stbl td { padding: 8px 14px; color: #111827; font-size: 13px; text-align: left; }
   .stbl tr:hover td { background: #fafafa; }
 
   /* ── Modal ── */
