@@ -409,7 +409,7 @@
           </div>
           <div class="card-body" style="padding-top:0;">
             <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
-              <table class="stbl">
+              <table class="stbl" id="summary-table">
                 <thead><tr><th>number</th><th>decimal</th></tr></thead>
                 <tbody>
                   <tr><td>1234</td><td>1443.98</td></tr>
@@ -875,6 +875,7 @@ let pCols = [];  // array of column objects
 let pActive = null; // index of active column in list
 let pAiLog = []; // AI adjustment strings
 let pSchemaFile = null;
+let schemaFileCtx = ''; // 's' when AI file upload is from schema settings modal
 
 const TYPE_ICONS = {
   'Text':           '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h10"/></svg>',
@@ -902,13 +903,15 @@ let pModule = 'Lookup'; // 'Lookup' | 'Entries' | 'Variable'
 ═══════════════════════════════════════════════════ */
 function openSchemaModal() {
   // Seed pCols from current SCHEMA so user edits the live schema
-  pCols = SCHEMA.map(s => makeCol({
+  pCols = SCHEMA.map((s, i) => makeCol({
     name: s.name,
     type: s.label === 'INTEGER' ? 'Whole Number' : s.label.startsWith('DECIMAL') ? 'Decimal Number' : 'Text',
     isMandatory: s.required,
     showInSummary: true,
+    isKey: i === 0, // first column is key by default
   }));
   pActive = 0;
+  schemaFileCtx = 's';
   document.getElementById('schema-modal').classList.add('open');
   renderSchemaSettings();
 }
@@ -940,13 +943,20 @@ function saveSchemaSettings() {
                 : col.type.toUpperCase();
     SCHEMA.push({ name: col.name, label, required: col.isMandatory });
   });
+  // Rebuild the summary table headers to reflect updated schema
+  const tbl = document.getElementById('summary-table');
+  if (tbl) {
+    tbl.querySelector('thead').innerHTML =
+      '<tr>' + SCHEMA.map(s => `<th>${s.name}</th>`).join('') + '</tr>';
+    tbl.querySelector('tbody').innerHTML = '<tr><td colspan="' + SCHEMA.length + '" style="color:#9ca3af;font-size:12px;text-align:center;padding:16px;">Upload data to populate the table.</td></tr>';
+  }
   closeSchemaModal();
 }
 
 
 function openProfileModal(module) {
   pModule = module || 'Lookup';
-  pStep = 1; pCols = []; pActive = null; pAiLog = []; pSchemaFile = null;
+  pStep = 1; pCols = []; pActive = null; pAiLog = []; pSchemaFile = null; schemaFileCtx = '';
   document.getElementById('profile-modal').classList.add('open');
   renderProfile();
 }
@@ -1240,7 +1250,7 @@ function handleSchemaFile(inp) {
     });
 
     pActive = 0;
-    rerenderSchema();
+    if (schemaFileCtx === 's') rerenderCtx('s'); else rerenderSchema();
   };
   reader.readAsArrayBuffer(f);
 }
