@@ -394,7 +394,7 @@
             <input type="text" placeholder="Please enter">
             <div class="icon-row">
               <!-- Table settings -->
-              <button class="icon-btn" title="Table settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="m14.3 19.6 1-.4"/><path d="M15 3v7.5"/><path d="m15.2 16.9-.9-.3"/><path d="m16.6 21.7.3-.9"/><path d="m16.8 15.3-.4-1"/><path d="m19.1 15.2.3-.9"/><path d="m19.6 21.7-.4-1"/><path d="m20.7 16.8 1-.4"/><path d="m21.7 19.4-.9-.3"/><path d="M9 3v18"/><circle cx="18" cy="18" r="3"/></svg></button>
+              <button class="icon-btn" title="Table settings" onclick="openSchemaModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="m14.3 19.6 1-.4"/><path d="M15 3v7.5"/><path d="m15.2 16.9-.9-.3"/><path d="m16.6 21.7.3-.9"/><path d="m16.8 15.3-.4-1"/><path d="m19.1 15.2.3-.9"/><path d="m19.6 21.7-.4-1"/><path d="m20.7 16.8 1-.4"/><path d="m21.7 19.4-.9-.3"/><path d="M9 3v18"/><circle cx="18" cy="18" r="3"/></svg></button>
               <!-- Upload -->
               <button class="icon-btn" onclick="openModal()" title="Upload"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 8l-4-4-4 4M12 4v12"/></svg></button>
               <!-- Download -->
@@ -409,7 +409,7 @@
           </div>
           <div class="card-body" style="padding-top:0;">
             <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
-              <table class="stbl">
+              <table class="stbl" id="summary-table">
                 <thead><tr><th>number</th><th>decimal</th></tr></thead>
                 <tbody>
                   <tr><td>1234</td><td>1443.98</td></tr>
@@ -432,6 +432,18 @@
     <div class="modal-header"><div class="modal-title">Upload Lookup Data</div><button class="modal-close" onclick="closeModal()">&#x2715;</button></div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- ══════ SCHEMA SETTINGS MODAL ══════ -->
+<div class="overlay" id="schema-modal">
+  <div class="modal pmodal">
+    <div class="modal-header">
+      <div class="modal-title">Schema Settings</div>
+      <button class="modal-close" onclick="closeSchemaModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="smodal-body" style="padding:0;"></div>
+    <div class="modal-footer" id="smodal-footer"></div>
   </div>
 </div>
 
@@ -863,6 +875,7 @@ let pCols = [];  // array of column objects
 let pActive = null; // index of active column in list
 let pAiLog = []; // AI adjustment strings
 let pSchemaFile = null;
+let schemaFileCtx = ''; // 's' when AI file upload is from schema settings modal
 
 const TYPE_ICONS = {
   'Text':           '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h10"/></svg>',
@@ -885,9 +898,65 @@ let pModule = 'Lookup'; // 'Lookup' | 'Entries' | 'Variable'
 
 
 
+/* ══════════════════════════════════════════════════
+   SCHEMA SETTINGS MODAL
+═══════════════════════════════════════════════════ */
+function openSchemaModal() {
+  // Seed pCols from current SCHEMA so user edits the live schema
+  pCols = SCHEMA.map((s, i) => makeCol({
+    name: s.name,
+    type: s.label === 'INTEGER' ? 'Whole Number' : s.label.startsWith('DECIMAL') ? 'Decimal Number' : 'Text',
+    isMandatory: s.required,
+    showInSummary: true,
+    isKey: i === 0, // first column is key by default
+  }));
+  pActive = 0;
+  schemaFileCtx = 's';
+  document.getElementById('schema-modal').classList.add('open');
+  renderSchemaSettings();
+}
+
+function closeSchemaModal() {
+  document.getElementById('schema-modal').classList.remove('open');
+}
+
+function renderSchemaSettings() {
+  const body = document.getElementById('smodal-body');
+  const foot = document.getElementById('smodal-footer');
+  body.innerHTML = '';
+  foot.innerHTML = '';
+  body.insertAdjacentHTML('beforeend',
+    `<div class="schema-layout" id="schema-layout-s">${buildColListPanel('s')}${buildColConfigPanel('s')}</div>`
+  );
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeSchemaModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveSchemaSettings()">Save Changes</button>
+  `);
+}
+
+function saveSchemaSettings() {
+  // Persist edits back into SCHEMA
+  SCHEMA.length = 0;
+  pCols.forEach(col => {
+    const label = col.type === 'Whole Number' ? 'INTEGER'
+                : col.type === 'Decimal Number' ? 'DECIMAL(2)'
+                : col.type.toUpperCase();
+    SCHEMA.push({ name: col.name, label, required: col.isMandatory });
+  });
+  // Rebuild the summary table headers to reflect updated schema
+  const tbl = document.getElementById('summary-table');
+  if (tbl) {
+    tbl.querySelector('thead').innerHTML =
+      '<tr>' + SCHEMA.map(s => `<th>${s.name}</th>`).join('') + '</tr>';
+    tbl.querySelector('tbody').innerHTML = '<tr><td colspan="' + SCHEMA.length + '" style="color:#9ca3af;font-size:12px;text-align:center;padding:16px;">Upload data to populate the table.</td></tr>';
+  }
+  closeSchemaModal();
+}
+
+
 function openProfileModal(module) {
   pModule = module || 'Lookup';
-  pStep = 1; pCols = []; pActive = null; pAiLog = []; pSchemaFile = null;
+  pStep = 1; pCols = []; pActive = null; pAiLog = []; pSchemaFile = null; schemaFileCtx = '';
   document.getElementById('profile-modal').classList.add('open');
   renderProfile();
 }
@@ -988,25 +1057,28 @@ function renderPStep2(body, foot) {
   `);
 }
 
-function buildColListPanel() {
+function buildColListPanel(ctx) {
+  const rerender = ctx === 's' ? `rerenderCtx('s')` : `rerenderSchema()`;
+  const moveCtx  = ctx === 's' ? `,'s'` : ``;
+  const delCtx   = ctx === 's' ? `,'s'` : ``;
   let items = '';
   pCols.forEach((col, i) => {
     const activeCls = i === pActive ? ' active' : '';
     const icon = TYPE_ICONS[col.type] || TYPE_ICONS['Text'];
     const keyIcon = col.isKey ? `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#1d4ed8" stroke-width="1.8" style="flex-shrink:0"><circle cx="6" cy="7" r="3.5"/><path d="M8.5 7h5M11.5 7v2"/></svg>` : '';
-    items += `<div class="col-card${activeCls}" onclick="pActive=${i};rerenderSchema()">
+    items += `<div class="col-card${activeCls}" onclick="pActive=${i};${rerender}">
       <div class="col-card-chevrons" onclick="event.stopPropagation()">
-        <button class="col-card-chev-btn" title="Move up" onclick="moveCol(${i},-1)" ${i===0?'disabled':''}>
+        <button class="col-card-chev-btn" title="Move up" onclick="moveCol(${i},-1${moveCtx})" ${i===0?'disabled':''}>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,7 5,3 8,7"/></svg>
         </button>
-        <button class="col-card-chev-btn" title="Move down" onclick="moveCol(${i},1)" ${i===pCols.length-1?'disabled':''}>
+        <button class="col-card-chev-btn" title="Move down" onclick="moveCol(${i},1${moveCtx})" ${i===pCols.length-1?'disabled':''}>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="2,3 5,7 8,3"/></svg>
         </button>
       </div>
       <div class="col-card-name">${col.name || 'Untitled Column'}</div>
       ${keyIcon}
       <div class="col-card-type-icon" title="${col.type}">${icon}</div>
-      <button class="col-card-delete-btn" title="Delete column" onclick="event.stopPropagation();deleteCol(${i})">
+      <button class="col-card-delete-btn" title="Delete column" onclick="event.stopPropagation();deleteCol(${i}${delCtx})">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3,4 13,4"/><path d="M5,4V3a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1V4"/><path d="M6,7v5M10,7v5"/><rect x="4" y="4" width="8" height="9" rx="1"/></svg>
       </button>
     </div>`;
@@ -1015,7 +1087,7 @@ function buildColListPanel() {
   return `<div class="col-list-panel">
     <div class="col-list-header">
       <div class="col-list-header-label">Columns (${pCols.length})</div>
-      <button class="btn btn-sm" style="padding:3px 8px;font-size:12px;" onclick="addManualCol()">+ Add</button>
+      <button class="btn btn-sm" style="padding:3px 8px;font-size:12px;" onclick="addManualCol('${ctx||''}')">+ Add</button>
     </div>
     <div class="col-list-body" id="col-list-body">${items}</div>
     <div id="no-key-err" class="hidden" style="margin:0 8px 8px;padding:8px 10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;font-size:12px;color:#991b1b;display:flex;align-items:flex-start;gap:6px;">
@@ -1035,14 +1107,15 @@ function buildColListPanel() {
   </div>`;
 }
 
-function buildColConfigPanel() {
+function buildColConfigPanel(ctx) {
+  const c = ctx === 's' ? `,'s'` : ``;
   if (pActive === null || !pCols[pActive]) {
     return `<div class="col-config-panel"><div class="no-col-selected"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:#d1d5db"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>Select a column to configure</div></div>`;
   }
   const col = pCols[pActive];
   const types = ['Text','Whole Number','Decimal Number','Dropdown','Date'];
   const typeButtons = types.map(t =>
-    `<button class="type-btn${col.type===t?' active':''}" onclick="setColType(${pActive},'${t}')">${TYPE_ICONS[t]||''}${t}</button>`
+    `<button class="type-btn${col.type===t?' active':''}" onclick="setColType(${pActive},'${t}'${c})">${TYPE_ICONS[t]||''}${t}</button>`
   ).join('');
 
   return `<div class="col-config-panel">
@@ -1063,7 +1136,7 @@ function buildColConfigPanel() {
     ${col.type==='Dropdown' ? `<div class="form-field"><div class="form-label">Options</div><input class="form-input" placeholder="Comma-separated: Option A, Option B, Option C" value="${(col.dropdownOptions||[]).join(', ')}" oninput="updateCol(${pActive},'dropdownOptions',this.value.split(',').map(s=>s.trim()).filter(Boolean))"></div>` : ''}
     <div style="border-top:1px solid #f3f4f6;padding-top:12px;margin-top:4px;">
       <div class="check-field">
-        <input type="checkbox" id="ck-key" ${col.isKey?'checked':''} onchange="setKeyCol(${pActive},this.checked)">
+        <input type="checkbox" id="ck-key" ${col.isKey?'checked':''} onchange="setKeyCol(${pActive},this.checked${c})">
         <label for="ck-key">Key Column <span>Uniquely identifies each row. Mandatory and shown in summary are auto-enabled.</span></label>
       </div>
       <div class="check-field${col.isKey?' disabled':''}">
@@ -1076,7 +1149,7 @@ function buildColConfigPanel() {
       </div>
     </div>
     <div style="margin-top:16px;">
-      <button class="delete-col-btn" onclick="deleteCol(${pActive})">Delete Column</button>
+      <button class="delete-col-btn" onclick="deleteCol(${pActive}${c})">Delete Column</button>
     </div>
   </div>`;
 }
@@ -1086,14 +1159,17 @@ function rerenderSchema() {
   if (layout) layout.innerHTML = buildColListPanel() + buildColConfigPanel();
 }
 
+function rerenderCtx(ctx) {
+  const id = ctx === 's' ? 'schema-layout-s' : 'schema-layout';
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = buildColListPanel(ctx) + buildColConfigPanel(ctx);
+}
+
 // Setting isKey also auto-enables Mandatory + Show in Summary
-function setKeyCol(i, val) {
+function setKeyCol(i, val, ctx) {
   pCols[i].isKey = val;
-  if (val) {
-    pCols[i].isMandatory    = true;
-    pCols[i].showInSummary  = true;
-  }
-  rerenderSchema();
+  if (val) { pCols[i].isMandatory = true; pCols[i].showInSummary = true; }
+  ctx ? rerenderCtx(ctx) : rerenderSchema();
 }
 
 // Validate Step 2 before proceeding: at least one Key Column required
@@ -1115,11 +1191,11 @@ function pValidateAndNext() {
 function makeCol(overrides={}) {
   return { name:'', desc:'', type:'Text', isKey:false, isMandatory:true, showInSummary:true, dropdownOptions:[], aiInferred:false, aiNote:'', ...overrides };
 }
-function addManualCol() { pCols.push(makeCol()); pActive = pCols.length-1; rerenderSchema(); }
-function deleteCol(i) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} rerenderSchema(); }
-function moveCol(i, dir) { const j = i + dir; if (j < 0 || j >= pCols.length) return; [pCols[i], pCols[j]] = [pCols[j], pCols[i]]; pActive = j; rerenderSchema(); }
+function addManualCol(ctx) { pCols.push(makeCol()); pActive = pCols.length-1; ctx ? rerenderCtx(ctx) : rerenderSchema(); }
+function deleteCol(i, ctx) { pCols.splice(i,1); pActive = Math.min(pActive, pCols.length-1); if (pCols.length===0){pCols.push(makeCol());pActive=0;} ctx ? rerenderCtx(ctx) : rerenderSchema(); }
+function moveCol(i, dir, ctx) { const j = i + dir; if (j < 0 || j >= pCols.length) return; [pCols[i], pCols[j]] = [pCols[j], pCols[i]]; pActive = j; ctx ? rerenderCtx(ctx) : rerenderSchema(); }
 function updateCol(i, key, val) { pCols[i][key] = val; }
-function setColType(i, type) { pCols[i].type = type; rerenderSchema(); }
+function setColType(i, type, ctx) { pCols[i].type = type; ctx ? rerenderCtx(ctx) : rerenderSchema(); }
 
 /* ─── AI Schema Inference ─── */
 function handleSchemaFile(inp) {
@@ -1174,7 +1250,7 @@ function handleSchemaFile(inp) {
     });
 
     pActive = 0;
-    rerenderSchema();
+    if (schemaFileCtx === 's') rerenderCtx('s'); else rerenderSchema();
   };
   reader.readAsArrayBuffer(f);
 }
