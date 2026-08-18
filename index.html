@@ -389,7 +389,7 @@
     <div class="content">
       <div class="page-panel">
         <div class="page-header">
-          <div class="page-title">DE Test NUMBER and DECIMALS <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+          <div class="page-title">Bank Transactions <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
           <div class="btn-row">
               <button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg> Favorite</button>
               <button class="btn btn-sm" title="Copy link"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
@@ -436,7 +436,7 @@
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </div>
           <div class="card-body" style="padding-top:0;">
-            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:13px;color:#374151;min-height:80px;">testing, in numbers and decimals</div>
+            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:13px;color:#374151;min-height:80px;">Monthly bank transaction entries, uploaded from statement exports (CSV/XLS) or bank statement PDFs.</div>
           </div>
         </div>
 
@@ -462,11 +462,11 @@
           <div class="card-body" style="padding-top:0;">
             <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
               <table class="stbl" id="summary-table">
-                <thead><tr><th>number</th><th>decimal</th></tr></thead>
+                <thead><tr><th>book_date</th><th>transaction_details</th><th>debit_credit</th><th>lcy_amount</th><th>lcy_closing_book_balance</th></tr></thead>
                 <tbody>
-                  <tr><td>1234</td><td>1443.98</td></tr>
-                  <tr><td>15000</td><td>122.25</td></tr>
-                  <tr><td>9999999</td><td>3654.12</td></tr>
+                  <tr><td>2026-05-02</td><td>TRSF E-BANKING CR 0205/FTSCY/WS95051</td><td>Credit</td><td>300000.00</td><td>2079000.00</td></tr>
+                  <tr><td>2026-05-06</td><td>TARIKAN ATM 06/05</td><td>Debit</td><td>500000.00</td><td>4929000.00</td></tr>
+                  <tr><td>2026-05-13</td><td>TRSF E-BANKING CR 1305/ACSCY/0000100</td><td>Credit</td><td>240000.00</td><td>5269000.00</td></tr>
                 </tbody>
               </table>
             </div>
@@ -517,10 +517,15 @@
 <script>
 /* ══════════════════════════════════════════════════
    SCHEMA  (column names + required flag only)
+   Based on the proposed bank-transaction schema —
+   see "Manual Bank Statement.xlsx" (dwd_bank_txns_di)
 ═══════════════════════════════════════════════════ */
 const SCHEMA = [
-  { name: 'number',  label: 'INTEGER',    required: true  },
-  { name: 'decimal', label: 'DECIMAL(2)', required: false },
+  { name: 'book_date',                required: true  , label: 'DATE'          },
+  { name: 'transaction_details',      required: false , label: 'STRING'        },
+  { name: 'debit_credit',             required: true  , label: 'STRING'        },
+  { name: 'lcy_amount',               required: true  , label: 'DECIMAL(24,8)' },
+  { name: 'lcy_closing_book_balance', required: true  , label: 'DECIMAL(24,8)' },
 ];
 
 /* ══════════════════════════════════════════════════
@@ -536,6 +541,7 @@ let uploadFlow = 'sheet';  // 'sheet' (CSV/XLS/XLSX → column mapping) | 'pdf' 
 let pdfIssues  = [];       // computed issues from simulated PDF extraction
 let pdfRows    = [];       // extracted rows, keyed by schema column name
 let pdfOverrides = {};     // 'row-col' → user has chosen to override an AI correction
+let pdfColMatches = [];    // schema column → recognized PDF header (matchPdfHeaders())
 
 /* ══════════════════════════════════════════════════
    FILE PARSING — headers only (SheetJS)
@@ -562,6 +568,11 @@ const ALIASES = {
   empid:'employee_id', emp_id:'employee_id',
   acctno:'account_number', acct_no:'account_number', account_no:'account_number',
   col:'column', num:'number', dec:'decimal', amt:'amount',
+  date:'book_date', transactiondate:'book_date', valuedate:'book_date', txndate:'book_date',
+  description:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', keterangan:'transaction_details', details:'transaction_details',
+  drcr:'debit_credit', debitcredit:'debit_credit', type:'debit_credit',
+  amount:'lcy_amount', mutasi:'lcy_amount', jumlah:'lcy_amount',
+  balance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance', saldo:'lcy_closing_book_balance',
 };
 
 function normalize(s) {
@@ -608,64 +619,138 @@ function matchColumns(schema, headers) {
 /* ══════════════════════════════════════════════════
    PDF BANK STATEMENT — SIMULATED AI EXTRACTION
    (a real backend would OCR/parse the PDF; here we
-   simulate imperfect extraction so the AI Review /
-   Confirm steps have realistic issues to resolve)
+   simulate recognizing the statement's own column
+   headers and mapping them onto the schema, with a
+   few realistic issues for AI Review to resolve)
 ═══════════════════════════════════════════════════ */
 function schemaTypeOf(col) {
-  if (/^INTEGER/i.test(col.label)) return 'integer';
+  if (/^DATE/i.test(col.label)) return 'date';
   if (/^DECIMAL/i.test(col.label)) return 'decimal2';
-  return 'text';
+  if (/^INTEGER/i.test(col.label)) return 'integer';
+  return 'string';
 }
 const TYPE_CHECK = {
   integer:  v => /^\s*-?\d+\s*$/.test(String(v)) ? null : 'Must be a whole number (e.g. 42)',
   decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(String(v)) ? null : 'Must be a number with up to 2 decimal places (e.g. 10.00)',
+  date:     v => /^\d{4}-\d{2}-\d{2}$/.test(String(v).trim()) ? null : 'Must be a date in YYYY-MM-DD format (e.g. 2026-05-02)',
+  string:   () => null,
 };
-function autoFormatPdf(col, rawVal) {
-  if (rawVal === null || rawVal === undefined || rawVal === '') return null;
-  const s = String(rawVal).trim();
-  if (schemaTypeOf(col) === 'decimal2') {
-    const n = parseFloat(s);
-    if (!isNaN(n)) { const formatted = n.toFixed(2); return formatted !== s ? formatted : null; }
-  }
-  return null;
+
+// Common bank-statement header text (Indonesian & English) → canonical schema column
+const BANK_HEADER_ALIASES = {
+  tanggal:'book_date', tanggaltransaksi:'book_date', transactiondate:'book_date', date:'book_date', valuedate:'book_date', bookdate:'book_date', tanggalpembukuan:'book_date',
+  keterangan:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', description:'transaction_details', transactiondetails:'transaction_details', remark:'transaction_details', remarks:'transaction_details',
+  mutasi:'lcy_amount', amount:'lcy_amount', jumlah:'lcy_amount', nominal:'lcy_amount',
+  saldo:'lcy_closing_book_balance', balance:'lcy_closing_book_balance', runningbalance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance',
+};
+
+// Recognize each schema column against the statement's own header row
+// (debit_credit has no header of its own — it's derived from the Mutasi value).
+function rawNormalize(s) {
+  return s.toLowerCase().replace(/[\s_\-\.]+/g, '');
 }
 
-// Canned "extracted" rows standing in for what an AI/OCR pass over a bank
-// statement PDF would produce — deliberately messy to exercise AI Review.
+function matchPdfHeaders(headers) {
+  const used = new Set();
+  return SCHEMA.map(col => {
+    if (col.name === 'debit_credit') {
+      return { schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how: 'Derived from Mutasi (DB suffix)', matched: true };
+    }
+    const idx = headers.findIndex((h, i) => !used.has(i) && BANK_HEADER_ALIASES[rawNormalize(h)] === col.name);
+    if (idx !== -1) used.add(idx);
+    return {
+      schemaName: col.name,
+      schemaLabel: col.label,
+      required: col.required,
+      pdfHeader: idx !== -1 ? headers[idx] : null,
+      how: idx !== -1 ? 'Recognized from PDF column header' : null,
+      matched: idx !== -1,
+    };
+  });
+}
+
+// Bank statements typically print Indonesian-formatted numbers (dot = thousands, comma = decimal)
+// and a trailing "DB" marker for debit rows — parse both into schema-shaped values.
+function parseIndoAmount(raw) {
+  const s = String(raw).trim();
+  const isDebit = /\bDB\b/i.test(s);
+  const numeric = s.replace(/\bDB\b/i, '').trim().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(numeric);
+  return { value: isNaN(n) ? null : n.toFixed(2), isDebit };
+}
+
+// Statement dates are printed as DD/MM without a year — combine with the
+// statement's period (shown in its header) to produce an ISO date.
+function parseIndoDate(raw, periodYearMonth) {
+  const m = String(raw).trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (!m) return null;
+  const [, dd, mm] = m;
+  return `${periodYearMonth}-${dd.padStart(2, '0')}`;
+}
+
+const STATEMENT_PERIOD = '2026-05'; // "PERIODE: MEI 2026" printed on the statement
+
+// Recognized PDF header row, and the raw cell text under each — standing in for
+// what an OCR/AI pass over a bank statement PDF (e.g. the BCA example) would read.
+const PDF_RECOGNIZED_HEADERS = ['TANGGAL', 'KETERANGAN', 'MUTASI', 'SALDO'];
 const PDF_EXTRACTION_SAMPLE = [
-  { number: null,            decimal: null                 },
-  { number: null,            decimal: 'this is an integer'  },
-  { number: 'not a number',  decimal: '10'                  },
+  { TANGGAL: '02/05', KETERANGAN: 'TRSF E-BANKING CR 0205/FTSCY/WS95051',            MUTASI: '300.000,00',    SALDO: '2.079.000,00' },
+  { TANGGAL: '06/05', KETERANGAN: 'TARIKAN ATM 06/05',                               MUTASI: '500.000,00 DB', SALDO: null           },
+  { TANGGAL: '13/05', KETERANGAN: 'TRSF E-BANKING CR 1305/ACSCY/0000100',            MUTASI: '240.000,00',    SALDO: '5.269.000,00' },
 ];
 
 function simulatePdfExtraction() {
-  const rows = PDF_EXTRACTION_SAMPLE.map(r => ({ ...r }));
+  const colMatches = matchPdfHeaders(PDF_RECOGNIZED_HEADERS);
+  const rows = [];
   const issues = [];
-  rows.forEach((row, ri) => {
+
+  PDF_EXTRACTION_SAMPLE.forEach((raw, ri) => {
     const rowNum = ri + 1;
-    SCHEMA.forEach(col => {
-      const raw = row[col.name];
-      const isEmpty = raw === null || raw === undefined || raw === '';
-      if (isEmpty) {
-        if (col.required) {
-          issues.push({ row: rowNum, col: col.name, original: null, fixed: null, canFix: false, reason: 'Required field is empty — could not be extracted from the PDF.' });
-        }
-        return;
-      }
-      const s = String(raw).trim();
-      const type = schemaTypeOf(col);
-      const typeErr = TYPE_CHECK[type] ? TYPE_CHECK[type](s) : null;
-      if (typeErr) {
-        issues.push({ row: rowNum, col: col.name, original: raw, fixed: null, canFix: false, reason: `Extracted text in a ${type === 'integer' ? 'number' : 'decimal'} column — cannot determine the intended value.` });
-        return;
-      }
-      const formatted = autoFormatPdf(col, raw);
-      if (formatted !== null) {
-        issues.push({ row: rowNum, col: col.name, original: raw, fixed: formatted, canFix: true, reason: 'Formatted to match schema.' });
-      }
-    });
+    const row = {};
+
+    // book_date — parsed from the recognized TANGGAL column using the statement period
+    const rawDate = raw.TANGGAL;
+    const parsedDate = rawDate ? parseIndoDate(rawDate, STATEMENT_PERIOD) : null;
+    if (!parsedDate) {
+      row.book_date = null;
+      issues.push({ row: rowNum, col: 'book_date', original: rawDate ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the transaction date manually.' });
+    } else {
+      row.book_date = parsedDate;
+      issues.push({ row: rowNum, col: 'book_date', original: rawDate, fixed: parsedDate, canFix: true, reason: `Parsed "${rawDate}" using the statement period (${STATEMENT_PERIOD}) and formatted as YYYY-MM-DD.` });
+    }
+
+    // transaction_details — passed through as-is (optional, free text)
+    row.transaction_details = raw.KETERANGAN || null;
+
+    // lcy_amount + debit_credit — both derived from the Mutasi column
+    const parsedAmount = raw.MUTASI ? parseIndoAmount(raw.MUTASI) : null;
+    if (!parsedAmount || parsedAmount.value === null) {
+      row.lcy_amount = null;
+      row.debit_credit = null;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the amount manually.' });
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: null, canFix: false, reason: 'Depends on Mutasi — enter the amount first.' });
+    } else {
+      row.lcy_amount = parsedAmount.value;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI, fixed: parsedAmount.value, canFix: true, reason: `Converted "${raw.MUTASI}" from Indonesian number format (dot = thousands, comma = decimal).` });
+      const drCr = parsedAmount.isDebit ? 'Debit' : 'Credit';
+      row.debit_credit = drCr;
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: drCr, canFix: true, reason: `Inferred from Mutasi — ${parsedAmount.isDebit ? '"DB" suffix present' : 'no "DB" suffix'} on "${raw.MUTASI}".` });
+    }
+
+    // lcy_closing_book_balance — parsed from the recognized SALDO column
+    if (!raw.SALDO) {
+      row.lcy_closing_book_balance = null;
+      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: null, fixed: null, canFix: false, reason: 'Could not be read from the PDF (smudged or cut off) — please enter the closing balance manually.' });
+    } else {
+      const parsedBalance = parseIndoAmount(raw.SALDO).value;
+      row.lcy_closing_book_balance = parsedBalance;
+      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: raw.SALDO, fixed: parsedBalance, canFix: true, reason: `Converted "${raw.SALDO}" from Indonesian number format (dot = thousands, comma = decimal).` });
+    }
+
+    rows.push(row);
   });
-  return { rows, issues };
+
+  return { rows, issues, colMatches };
 }
 
 /* ══════════════════════════════════════════════════
@@ -673,7 +758,7 @@ function simulatePdfExtraction() {
 ═══════════════════════════════════════════════════ */
 function openModal() {
   step = 'upload'; fileHeaders = []; fileRows = []; colMappings = []; userMappings = {}; reasonForChange = '';
-  uploadFlow = 'sheet'; pdfIssues = []; pdfRows = []; pdfOverrides = {};
+  uploadFlow = 'sheet'; pdfIssues = []; pdfRows = []; pdfOverrides = {}; pdfColMatches = [];
   document.getElementById('modal').classList.add('open');
   render();
 }
@@ -770,10 +855,11 @@ function startAnalysis() {
   goStep('analyzing');
   if (uploadFlow === 'pdf') {
     setTimeout(() => {
-      const { rows, issues } = simulatePdfExtraction();
+      const { rows, issues, colMatches } = simulatePdfExtraction();
       pdfRows = rows;
       pdfIssues = issues;
       pdfOverrides = {};
+      pdfColMatches = colMatches;
       goStep('confirm');
     }, 1600);
     return;
@@ -917,17 +1003,24 @@ function confirm(body, foot) {
 }
 
 function buildPdfSchemaSection() {
+  const recognizedCount = pdfColMatches.filter(m => m.matched && m.pdfHeader).length;
   let rows = '';
   SCHEMA.forEach(col => {
+    const match = pdfColMatches.find(m => m.schemaName === col.name);
     const colIssues = pdfIssues.filter(x => x.col === col.name);
     const hasManual = colIssues.some(x => !x.canFix);
-    const hasAuto   = colIssues.some(x => x.canFix);
     const indCls   = !colIssues.length ? 'ind-green' : hasManual ? 'ind-red' : 'ind-yellow';
     const pillCls  = !colIssues.length ? 'pill-green' : hasManual ? 'pill-red' : 'pill-yellow';
 
-    let detail = '';
+    const recognized = match && match.pdfHeader
+      ? `Recognized from PDF column <code>${match.pdfHeader}</code>.`
+      : match && match.matched
+        ? `${match.how}.`
+        : `<span class="err">No matching column found in the PDF.</span>`;
+
+    let detail = `${recognized}<br>`;
     if (!colIssues.length) {
-      detail = 'All values are valid.';
+      detail += 'All values are valid.';
     } else {
       const manualRows = colIssues.filter(x => !x.canFix).map(x => x.row);
       const autoRows   = colIssues.filter(x => x.canFix).map(x => x.row);
@@ -948,7 +1041,7 @@ function buildPdfSchemaSection() {
     <div class="schema-section">
       <div class="schema-toggle" onclick="toggleSchema(this)">
         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
-        Schema check — ${SCHEMA.length} column(s) analysed
+        Schema check — recognized ${recognizedCount} of ${SCHEMA.length} column(s) from the PDF
       </div>
       <div class="schema-body" id="schema-body">${rows}</div>
     </div>`;
@@ -984,6 +1077,14 @@ function buildPdfGrid() {
         const overrideVal = pdfOverrides[key];
         if (overrideVal !== undefined) {
           cells += buildPdfEditableCell(rn, col.name, issue, overrideVal);
+        } else if (issue.original === null || issue.original === undefined) {
+          // Derived value (e.g. debit_credit) — no "before" text to show, just the AI-filled result
+          cells += `<div class="cell-corrected">
+            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
+            <button class="cell-pencil" title="Edit AI-derived value" onclick="overridePdfCell(${rn},'${col.name}',event)">
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+          </div>`;
         } else {
           cells += `<div class="cell-corrected">
             <span class="val-del" style="font-size:11px;">${issue.original}</span>
@@ -1124,9 +1225,9 @@ function doPdfSubmit() {
 
 // Simulated "current" data already in the system (the summary table rows)
 const EXISTING_ROWS = [
-  ['1234', '1443.98'],
-  ['15000', '122.25'],
-  ['9999999', '3654.12'],
+  ['2026-05-02', 'TRSF E-BANKING CR 0205/FTSCY/WS95051', 'Credit', '300000.00', '2079000.00'],
+  ['2026-05-06', 'TARIKAN ATM 06/05',                     'Debit',  '500000.00', '4929000.00'],
+  ['2026-05-13', 'TRSF E-BANKING CR 1305/ACSCY/0000100',  'Credit', '240000.00', '5269000.00'],
 ];
 
 function preview(body, foot) {
@@ -1258,7 +1359,10 @@ function openSchemaModal() {
   // Seed pCols from current SCHEMA so user edits the live schema
   pCols = SCHEMA.map((s, i) => makeCol({
     name: s.name,
-    type: s.label === 'INTEGER' ? 'Whole Number' : s.label.startsWith('DECIMAL') ? 'Decimal Number' : 'Text',
+    type: s.label === 'INTEGER' ? 'Whole Number'
+        : s.label.startsWith('DECIMAL') ? 'Decimal Number'
+        : s.label === 'DATE' ? 'Date'
+        : 'Text',
     isMandatory: s.required,
     showInSummary: true,
     isKey: i === 0, // first column is key by default
@@ -1292,7 +1396,9 @@ function saveSchemaSettings() {
   SCHEMA.length = 0;
   pCols.forEach(col => {
     const label = col.type === 'Whole Number' ? 'INTEGER'
-                : col.type === 'Decimal Number' ? 'DECIMAL(2)'
+                : col.type === 'Decimal Number' ? 'DECIMAL(24,8)'
+                : col.type === 'Date' ? 'DATE'
+                : col.type === 'Text' ? 'STRING'
                 : col.type.toUpperCase();
     SCHEMA.push({ name: col.name, label, required: col.isMandatory });
   });
