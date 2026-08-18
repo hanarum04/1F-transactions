@@ -532,6 +532,10 @@ let fileRows     = [];     // all data rows from uploaded file
 let colMappings  = [];     // result of matchColumns()
 let userMappings = {};     // schemaColName → chosen fileHeader (user overrides)
 let reasonForChange = '';  // user-entered reason
+let uploadFlow = 'sheet';  // 'sheet' (CSV/XLS/XLSX → column mapping) | 'pdf' (bank statement → AI review)
+let pdfIssues  = [];       // computed issues from simulated PDF extraction
+let pdfRows    = [];       // extracted rows, keyed by schema column name
+let pdfOverrides = {};     // 'row-col' → user has chosen to override an AI correction
 
 /* ══════════════════════════════════════════════════
    FILE PARSING — headers only (SheetJS)
@@ -602,10 +606,74 @@ function matchColumns(schema, headers) {
 }
 
 /* ══════════════════════════════════════════════════
+   PDF BANK STATEMENT — SIMULATED AI EXTRACTION
+   (a real backend would OCR/parse the PDF; here we
+   simulate imperfect extraction so the AI Review /
+   Confirm steps have realistic issues to resolve)
+═══════════════════════════════════════════════════ */
+function schemaTypeOf(col) {
+  if (/^INTEGER/i.test(col.label)) return 'integer';
+  if (/^DECIMAL/i.test(col.label)) return 'decimal2';
+  return 'text';
+}
+const TYPE_CHECK = {
+  integer:  v => /^\s*-?\d+\s*$/.test(String(v)) ? null : 'Must be a whole number (e.g. 42)',
+  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(String(v)) ? null : 'Must be a number with up to 2 decimal places (e.g. 10.00)',
+};
+function autoFormatPdf(col, rawVal) {
+  if (rawVal === null || rawVal === undefined || rawVal === '') return null;
+  const s = String(rawVal).trim();
+  if (schemaTypeOf(col) === 'decimal2') {
+    const n = parseFloat(s);
+    if (!isNaN(n)) { const formatted = n.toFixed(2); return formatted !== s ? formatted : null; }
+  }
+  return null;
+}
+
+// Canned "extracted" rows standing in for what an AI/OCR pass over a bank
+// statement PDF would produce — deliberately messy to exercise AI Review.
+const PDF_EXTRACTION_SAMPLE = [
+  { number: null,            decimal: null                 },
+  { number: null,            decimal: 'this is an integer'  },
+  { number: 'not a number',  decimal: '10'                  },
+];
+
+function simulatePdfExtraction() {
+  const rows = PDF_EXTRACTION_SAMPLE.map(r => ({ ...r }));
+  const issues = [];
+  rows.forEach((row, ri) => {
+    const rowNum = ri + 1;
+    SCHEMA.forEach(col => {
+      const raw = row[col.name];
+      const isEmpty = raw === null || raw === undefined || raw === '';
+      if (isEmpty) {
+        if (col.required) {
+          issues.push({ row: rowNum, col: col.name, original: null, fixed: null, canFix: false, reason: 'Required field is empty — could not be extracted from the PDF.' });
+        }
+        return;
+      }
+      const s = String(raw).trim();
+      const type = schemaTypeOf(col);
+      const typeErr = TYPE_CHECK[type] ? TYPE_CHECK[type](s) : null;
+      if (typeErr) {
+        issues.push({ row: rowNum, col: col.name, original: raw, fixed: null, canFix: false, reason: `Extracted text in a ${type === 'integer' ? 'number' : 'decimal'} column — cannot determine the intended value.` });
+        return;
+      }
+      const formatted = autoFormatPdf(col, raw);
+      if (formatted !== null) {
+        issues.push({ row: rowNum, col: col.name, original: raw, fixed: formatted, canFix: true, reason: 'Formatted to match schema.' });
+      }
+    });
+  });
+  return { rows, issues };
+}
+
+/* ══════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════ */
 function openModal() {
   step = 'upload'; fileHeaders = []; fileRows = []; colMappings = []; userMappings = {}; reasonForChange = '';
+  uploadFlow = 'sheet'; pdfIssues = []; pdfRows = []; pdfOverrides = {};
   document.getElementById('modal').classList.add('open');
   render();
 }
@@ -621,17 +689,24 @@ function render() {
   const foot = document.getElementById('modal-footer');
   body.innerHTML = foot.innerHTML = '';
   body.insertAdjacentHTML('beforeend', buildStepper());
-  ({ upload, analyzing, mapping, preview, success }[step] || (()=>{}))(body, foot);
+  ({ upload, analyzing, mapping, preview, confirm, success }[step] || (()=>{}))(body, foot);
 }
 
 function buildStepper() {
-  const defs = [
+  const defs = uploadFlow === 'pdf' ? [
+    { key:'upload',    label:'Upload'     },
+    { key:'analyzing', label:'AI Review'  },
+    { key:'confirm',   label:'Confirm'    },
+    { key:'success',   label:'Submit'     },
+  ] : [
     { key:'upload',  label:'Upload'          },
     { key:'mapping', label:'Column Mapping'   },
     { key:'preview', label:'Preview'          },
     { key:'success', label:'Submit'           },
   ];
-  const order = ['upload','analyzing','mapping','preview','success'];
+  const order = uploadFlow === 'pdf'
+    ? ['upload','analyzing','confirm','success']
+    : ['upload','analyzing','mapping','preview','success'];
   const cur = order.indexOf(step);
   let h = '<div class="stepper">';
   defs.forEach((d, i) => {
@@ -654,10 +729,10 @@ function upload(body, foot) {
       <a href="#" style="font-size:12px;color:#1d4ed8;display:inline-flex;align-items:center;gap:5px;text-decoration:none;"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Download Template</a>
     </div>
     <label class="upload-zone" id="dz">
-      <input type="file" accept=".csv,.xls,.xlsx" onchange="fileChosen(this)">
+      <input type="file" accept=".csv,.xls,.xlsx,.pdf" onchange="fileChosen(this)">
       <div class="upload-zone-icon"><svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg></div>
       <div class="upload-zone-title">Upload file</div>
-      <div class="upload-zone-sub">Drag and drop or click to upload<br>Accepts CSV, XLS, XLSX files. No file size limit.</div>
+      <div class="upload-zone-sub">Drag and drop or click to upload<br>Accepts CSV, XLS, XLSX, PDF files. No file size limit.</div>
     </label>
     <div class="file-selected hidden" id="file-info">
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:#6b7280;flex-shrink:0"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
@@ -667,7 +742,7 @@ function upload(body, foot) {
   `);
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Submit</button>
+    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">${uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit'}</button>
   `);
   const dz = document.getElementById('dz');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
@@ -679,10 +754,13 @@ function fileChosen(inp) {
   const f = inp.files && inp.files[0];
   if (!f) return;
   _pendingFile = f;
+  uploadFlow = /\.pdf$/i.test(f.name) ? 'pdf' : 'sheet';
   document.getElementById('file-info').classList.remove('hidden');
   document.getElementById('fn').textContent = f.name;
   document.getElementById('fs').textContent = fmt(f.size);
-  document.getElementById('next-btn').disabled = false;
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.disabled = false;
+  nextBtn.textContent = uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit';
 }
 
 /* ══════════════════════════════════════════════════
@@ -690,6 +768,16 @@ function fileChosen(inp) {
 ═══════════════════════════════════════════════════ */
 function startAnalysis() {
   goStep('analyzing');
+  if (uploadFlow === 'pdf') {
+    setTimeout(() => {
+      const { rows, issues } = simulatePdfExtraction();
+      pdfRows = rows;
+      pdfIssues = issues;
+      pdfOverrides = {};
+      goStep('confirm');
+    }, 1600);
+    return;
+  }
   if (_pendingFile) {
     parseHeaders(_pendingFile, (headers, rows) => {
       fileHeaders = headers;
@@ -703,13 +791,15 @@ function startAnalysis() {
 }
 
 function analyzing(body, foot) {
+  const title = uploadFlow === 'pdf' ? 'Reading your bank statement…' : 'Detecting columns…';
+  const sub   = uploadFlow === 'pdf' ? 'Extracting transaction data from the PDF and checking it against your schema.' : "Matching your file's columns to the schema.";
   body.insertAdjacentHTML('beforeend', `
     <div class="spinner-wrap">
       <div class="spinner"></div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Detecting columns…</div>
-      <div style="font-size:12px;color:#6b7280;">Matching your file's columns to the schema.</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${title}</div>
+      <div style="font-size:12px;color:#6b7280;">${sub}</div>
     </div>`);
-  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Submit</button>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>${uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit'}</button>`);
 }
 
 /* ══════════════════════════════════════════════════
@@ -794,6 +884,238 @@ function doSubmit() {
     return;
   }
   goStep('preview');
+}
+
+/* ══════════════════════════════════════════════════
+   STEP: CONFIRM  (PDF flow — AI-extracted data, review & edit)
+═══════════════════════════════════════════════════ */
+function confirm(body, foot) {
+  const auto   = pdfIssues.filter(x => x.canFix);
+  const manual = pdfIssues.filter(x => !x.canFix);
+
+  body.insertAdjacentHTML('beforeend', `
+    <div class="info-bar">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>AI applied <strong>${auto.length} correction(s)</strong> automatically.
+        ${manual.length ? `Fill in the <strong>${manual.length} highlighted cell(s)</strong> — values are validated against the schema before submitting.` : 'All extracted values are valid.'}
+      </span>
+    </div>
+
+    ${buildPdfSchemaSection()}
+
+    <div class="sh" style="margin-bottom:8px;">Edit corrections inline</div>
+    ${buildPdfGrid()}
+  `);
+
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="goStep('upload')">Back</button>
+    <button class="btn btn-primary" onclick="doPdfSubmit()">Confirm and Submit</button>
+  `);
+
+  initScrollIndicator();
+}
+
+function buildPdfSchemaSection() {
+  let rows = '';
+  SCHEMA.forEach(col => {
+    const colIssues = pdfIssues.filter(x => x.col === col.name);
+    const hasManual = colIssues.some(x => !x.canFix);
+    const hasAuto   = colIssues.some(x => x.canFix);
+    const indCls   = !colIssues.length ? 'ind-green' : hasManual ? 'ind-red' : 'ind-yellow';
+    const pillCls  = !colIssues.length ? 'pill-green' : hasManual ? 'pill-red' : 'pill-yellow';
+
+    let detail = '';
+    if (!colIssues.length) {
+      detail = 'All values are valid.';
+    } else {
+      const manualRows = colIssues.filter(x => !x.canFix).map(x => x.row);
+      const autoRows   = colIssues.filter(x => x.canFix).map(x => x.row);
+      if (manualRows.length) detail += `<span class="err">Row(s) ${manualRows.join(', ')}</span> could not be read from the PDF — your input is required.<br>`;
+      if (autoRows.length)   detail += `Row(s) ${autoRows.join(', ')} <span class="ok">auto-corrected by AI</span>.`;
+    }
+
+    rows += `<div class="check-row">
+      <div class="ind ${indCls}"></div>
+      <div>
+        <div class="check-col">${col.name} <span class="pill ${pillCls}">${col.label}</span></div>
+        <div class="check-detail">${detail}</div>
+      </div>
+    </div>`;
+  });
+
+  return `
+    <div class="schema-section">
+      <div class="schema-toggle" onclick="toggleSchema(this)">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
+        Schema check — ${SCHEMA.length} column(s) analysed
+      </div>
+      <div class="schema-body" id="schema-body">${rows}</div>
+    </div>`;
+}
+
+function toggleSchema(el) {
+  const body = document.getElementById('schema-body');
+  const chev = document.getElementById('schema-chevron');
+  const open = body.classList.toggle('open');
+  chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+function buildPdfGrid() {
+  let headerCells = '<th>#</th>';
+  SCHEMA.forEach(col => { headerCells += `<th>${col.name}</th>`; });
+
+  let bodyRows = '';
+  pdfRows.forEach((row, ri) => {
+    const rn = ri + 1;
+    const rowIssues = pdfIssues.filter(x => x.row === rn);
+    let cells = `<td class="grid-rn">${rn}</td>`;
+
+    SCHEMA.forEach(col => {
+      const issue = rowIssues.find(x => x.col === col.name);
+      const key = `${rn}-${col.name}`;
+      cells += '<td>';
+      if (!issue) {
+        const v = row[col.name];
+        cells += (v === null || v === undefined || v === '')
+          ? '<div class="cell-ok cell-empty">—</div>'
+          : `<div class="cell-ok">${v}</div>`;
+      } else if (issue.canFix) {
+        const overrideVal = pdfOverrides[key];
+        if (overrideVal !== undefined) {
+          cells += buildPdfEditableCell(rn, col.name, issue, overrideVal);
+        } else {
+          cells += `<div class="cell-corrected">
+            <span class="val-del" style="font-size:11px;">${issue.original}</span>
+            <span class="val-arrow">→</span>
+            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
+            <button class="cell-pencil" title="Edit AI correction" onclick="overridePdfCell(${rn},'${col.name}',event)">
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+          </div>`;
+        }
+      } else {
+        cells += buildPdfEditableCell(rn, col.name, issue, '');
+      }
+      cells += '</td>';
+    });
+
+    let notes = '';
+    rowIssues.forEach(iss => {
+      const dotCls = iss.canFix ? 'nd-yellow' : 'nd-red';
+      notes += `<div class="note-line"><div class="note-dot ${dotCls}"></div><span><strong>${iss.col}:</strong> ${iss.reason}</span></div>`;
+    });
+
+    cells += `<td class="col-notes">${notes}</td>`;
+    bodyRows += `<tr>${cells}</tr>`;
+  });
+
+  return `
+    <div class="grid-outer" id="grid-outer">
+      <div class="grid-scroll" id="grid-scroll">
+        <table class="grid-tbl">
+          <thead><tr>${headerCells}<th class="col-notes">Notes</th></tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      <div class="scroll-ind" id="scroll-ind">
+        <div class="scroll-ind-inner">
+          <div class="scroll-arr" onclick="document.getElementById('grid-scroll').scrollBy({top:100,behavior:'smooth'})">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            More rows below
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildPdfEditableCell(rn, colName, issue, currentVal) {
+  const orig = (issue.original === null || issue.original === '') ? '' : issue.original;
+  const placeholder = orig ? `Was: ${orig}` : 'Enter value…';
+  return `<div class="cell-need-wrap">
+    <input type="text" class="cell-input" id="e-${rn}-${colName}"
+      value="${currentVal}"
+      placeholder="${placeholder}"
+      data-row="${rn}" data-col="${colName}"
+      oninput="validatePdfCell(this)" onblur="validatePdfCell(this)">
+    <div class="cell-err-tip" id="err-${rn}-${colName}"></div>
+  </div>`;
+}
+
+function overridePdfCell(row, colName, evt) {
+  evt.stopPropagation();
+  const issue = pdfIssues.find(x => x.row === row && x.col === colName);
+  if (!issue) return;
+  pdfOverrides[`${row}-${colName}`] = issue.fixed;
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  body.insertAdjacentHTML('beforeend', buildStepper());
+  confirm(body, { insertAdjacentHTML: () => {} });
+  setTimeout(() => {
+    const inp = document.getElementById(`e-${row}-${colName}`);
+    if (inp) { inp.select(); inp.focus(); }
+  }, 30);
+}
+
+function validatePdfCell(inp) {
+  const row = inp.dataset.row;
+  const colName = inp.dataset.col;
+  const val = inp.value.trim();
+  const errEl = document.getElementById(`err-${row}-${colName}`);
+  if (!val) { inp.classList.remove('has-error'); if (errEl) errEl.textContent = ''; return; }
+  const col = SCHEMA.find(c => c.name === colName);
+  const type = col ? schemaTypeOf(col) : null;
+  const msg = type && TYPE_CHECK[type] ? TYPE_CHECK[type](val) : null;
+  if (msg) {
+    inp.classList.add('has-error');
+    if (errEl) errEl.textContent = msg;
+  } else {
+    inp.classList.remove('has-error');
+    if (errEl) errEl.textContent = '';
+  }
+}
+
+function initScrollIndicator() {
+  setTimeout(() => {
+    const scr = document.getElementById('grid-scroll');
+    const ind = document.getElementById('scroll-ind');
+    if (!scr || !ind) return;
+    const update = () => ind.classList.toggle('visible', scr.scrollHeight > scr.clientHeight + scr.scrollTop + 4);
+    update();
+    scr.addEventListener('scroll', update);
+  }, 60);
+}
+
+function doPdfSubmit() {
+  let hasError = false;
+  pdfIssues.filter(x => !x.canFix).forEach(c => {
+    const inp = document.getElementById(`e-${c.row}-${c.col}`);
+    if (!inp) return;
+    validatePdfCell(inp);
+    if (inp.classList.contains('has-error')) { hasError = true; return; }
+    if (!inp.value.trim()) {
+      inp.classList.add('has-error');
+      const errEl = document.getElementById(`err-${c.row}-${c.col}`);
+      if (errEl) errEl.textContent = 'This field is required.';
+      hasError = true;
+    }
+  });
+  if (hasError) {
+    const firstErr = document.querySelector('.cell-input.has-error');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  // Resolve final values into pdfRows before the grid's DOM is torn down
+  pdfRows.forEach((row, ri) => {
+    const rn = ri + 1;
+    SCHEMA.forEach(col => {
+      const inp = document.getElementById(`e-${rn}-${col.name}`);
+      if (inp) { row[col.name] = inp.value.trim(); return; }
+      const issue = pdfIssues.find(x => x.row === rn && x.col === col.name);
+      if (issue && issue.canFix) row[col.name] = issue.fixed;
+    });
+  });
+  goStep('success');
 }
 
 /* ══════════════════════════════════════════════════
@@ -1344,6 +1666,26 @@ function renderPStep3(body, foot) {
    STEP: SUCCESS
 ═══════════════════════════════════════════════════ */
 function success(body, foot) {
+  if (uploadFlow === 'pdf') {
+    const rowSummary = pdfRows.map(row => {
+      const cells = SCHEMA.map(col => row[col.name] || '—');
+      return `<tr>${cells.map(v => `<td style="padding:6px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;">${v}</td>`).join('')}</tr>`;
+    }).join('');
+
+    body.insertAdjacentHTML('beforeend', `
+      <div class="success-wrap">
+        <div class="success-ring"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#16a34a"><path d="M5 13l4 4L19 7"/></svg></div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Upload successful</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Data extracted from your PDF was confirmed and submitted successfully.</div>
+        <table style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;text-align:left;min-width:280px;">
+          <thead><tr style="background:#f9fafb;">${SCHEMA.map(col => `<th style="padding:7px 12px;font-size:11px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">${col.name}</th>`).join('')}</tr></thead>
+          <tbody>${rowSummary}</tbody>
+        </table>
+      </div>`);
+    foot.insertAdjacentHTML('beforeend', `<button class="btn btn-primary" onclick="closeModal()">Done</button>`);
+    return;
+  }
+
   const effective = colMappings.map(m => ({
     schema: m.schemaName,
     file: userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : m.fileCol,
