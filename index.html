@@ -449,13 +449,13 @@
             </div>
           </div>
           <div class="card-body" style="padding-top:0;">
-            <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
+            <div style="border:1px solid #e5e7eb;border-radius:6px;overflow-x:auto;overflow-y:hidden;">
               <table class="stbl" id="summary-table">
-                <thead><tr><th>book_date</th><th>transaction_details</th><th>debit_credit</th><th>lcy_amount</th><th>lcy_closing_book_balance</th></tr></thead>
+                <thead><tr><th>account_currency</th><th>account_number</th><th>source_file</th><th>statement_id</th><th>transaction_details</th><th>transaction_reference_number</th><th>statement_date</th><th>value_date</th><th>book_date</th><th>debit_credit</th><th>lcy_amount</th><th>lcy_opening_book_balance</th><th>lcy_closing_book_balance</th><th>extra_info</th></tr></thead>
                 <tbody>
-                  <tr><td>2026-05-02</td><td>TRSF E-BANKING CR 0205/FTSCY/WS95051</td><td>Credit</td><td>300000.00</td><td>2079000.00</td></tr>
-                  <tr><td>2026-05-06</td><td>TARIKAN ATM 06/05</td><td>Debit</td><td>500000.00</td><td>4929000.00</td></tr>
-                  <tr><td>2026-05-13</td><td>TRSF E-BANKING CR 1305/ACSCY/0000100</td><td>Credit</td><td>240000.00</td><td>5269000.00</td></tr>
+                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>TRSF E-BANKING CR 0205/FTSCY/WS95051</td><td>—</td><td>2026-05-31</td><td>2026-05-02</td><td>2026-05-02</td><td>Credit</td><td>200000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"1200000.00"}</td></tr>
+                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>TARIKAN ATM 06/05</td><td>—</td><td>2026-05-31</td><td>2026-05-06</td><td>2026-05-06</td><td>Debit</td><td>500000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"700000.00"}</td></tr>
+                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>BIAYA ADMIN BULANAN</td><td>—</td><td>2026-05-31</td><td>2026-05-13</td><td>2026-05-13</td><td>Debit</td><td>150000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"550000.00"}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -510,11 +510,20 @@
    see "Manual Bank Statement.xlsx" (dwd_bank_txns_di)
 ═══════════════════════════════════════════════════ */
 const SCHEMA = [
-  { name: 'book_date',                required: true  , label: 'DATE'          },
-  { name: 'transaction_details',      required: false , label: 'STRING'        },
-  { name: 'debit_credit',             required: true  , label: 'STRING'        },
-  { name: 'lcy_amount',               required: true  , label: 'DECIMAL(24,8)' },
-  { name: 'lcy_closing_book_balance', required: true  , label: 'DECIMAL(24,8)' },
+  { name: 'account_currency',             required: true  , label: 'STRING'         },
+  { name: 'account_number',               required: true  , label: 'DECIMAL(30,0)'  },
+  { name: 'source_file',                  required: false , label: 'STRING'         },
+  { name: 'statement_id',                 required: false , label: 'STRING'         },
+  { name: 'transaction_details',          required: false , label: 'STRING'         },
+  { name: 'transaction_reference_number', required: false , label: 'STRING'         },
+  { name: 'statement_date',               required: true  , label: 'DATE'           },
+  { name: 'value_date',                   required: true  , label: 'DATE'           },
+  { name: 'book_date',                    required: true  , label: 'DATE'           },
+  { name: 'debit_credit',                 required: true  , label: 'STRING'         },
+  { name: 'lcy_amount',                   required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'lcy_opening_book_balance',     required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'lcy_closing_book_balance',     required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'extra_info',                   required: false , label: 'STRING'         },
 ];
 
 /* ══════════════════════════════════════════════════
@@ -555,54 +564,69 @@ function parseHeaders(file, cb) {
 const ALIASES = {
   userid:'uid', user_id:'uid', user_no:'uid',
   empid:'employee_id', emp_id:'employee_id',
-  acctno:'account_number', acct_no:'account_number', account_no:'account_number',
   col:'column', num:'number', dec:'decimal', amt:'amount',
-  date:'book_date', transactiondate:'book_date', valuedate:'book_date', txndate:'book_date',
+  currency:'account_currency', ccy:'account_currency', matauang:'account_currency',
+  accountno:'account_number', acctno:'account_number', acct_no:'account_number', account_no:'account_number', norekening:'account_number', no_rekening:'account_number',
+  filename:'source_file', file:'source_file', sourcefile:'source_file',
+  statementid:'statement_id', stmtid:'statement_id',
   description:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', keterangan:'transaction_details', details:'transaction_details',
+  reference:'transaction_reference_number', referenceno:'transaction_reference_number', refno:'transaction_reference_number', txnref:'transaction_reference_number',
+  period:'statement_date', periode:'statement_date', statementdate:'statement_date',
+  valuedate:'value_date',
+  date:'book_date', transactiondate:'book_date', txndate:'book_date', bookdate:'book_date', tanggal:'book_date', tanggaltransaksi:'book_date',
   drcr:'debit_credit', debitcredit:'debit_credit', type:'debit_credit',
   amount:'lcy_amount', mutasi:'lcy_amount', jumlah:'lcy_amount',
+  openingbalance:'lcy_opening_book_balance', openbalance:'lcy_opening_book_balance', saldoawal:'lcy_opening_book_balance',
   balance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance', saldo:'lcy_closing_book_balance',
+  extrainfo:'extra_info', notes:'extra_info',
 };
 
 function normalize(s) {
-  const k = s.toLowerCase().replace(/[\s_\-\.]+/g, '');
-  return ALIASES[k] || k;
+  const k = s.toLowerCase().replace(/[\s_\-\.\/]+/g, '');
+  // Alias values are canonical schema names like "account_currency" — strip their
+  // separators too, so a header resolved through an alias compares equal to a
+  // schema name normalized directly (which never passes through the alias map).
+  return (ALIASES[k] || k).replace(/[\s_\-\.\/]+/g, '');
 }
 
 function matchColumns(schema, headers) {
   const used = new Set();
+  const results = schema.map(col => ({ col, idx: -1, how: null }));
 
-  return schema.map((col, si) => {
-    const normSchema = normalize(col.name);
+  // Each pass runs across the WHOLE schema before the next one starts, so a
+  // column with no name/alias match (and therefore only a position fallback
+  // available) never grabs a header that a later column would have matched
+  // by name — position fallback is strictly a last resort.
 
-    // 1. Exact name match (case-insensitive)
-    let idx = headers.findIndex((h, i) => !used.has(i) && h.toLowerCase() === col.name.toLowerCase());
-    let how = 'Exact name match';
-
-    // 2. Normalized / alias match
-    if (idx === -1) {
-      idx = headers.findIndex((h, i) => !used.has(i) && normalize(h) === normSchema);
-      how = 'Similar name match';
-    }
-
-    // 3. Position fallback — same column index
-    if (idx === -1 && si < headers.length && !used.has(si)) {
-      idx = si;
-      how = 'Position match';
-    }
-
-    if (idx !== -1) used.add(idx);
-
-    return {
-      schemaName: col.name,
-      schemaLabel: col.label,
-      required: col.required,
-      fileCol: idx !== -1 ? headers[idx] : null,
-      fileIdx: idx,
-      how: idx !== -1 ? how : null,
-      matched: idx !== -1,
-    };
+  // 1. Exact name match (case-insensitive)
+  results.forEach(r => {
+    const idx = headers.findIndex((h, i) => !used.has(i) && h.toLowerCase() === r.col.name.toLowerCase());
+    if (idx !== -1) { r.idx = idx; r.how = 'Exact name match'; used.add(idx); }
   });
+
+  // 2. Normalized / alias match
+  results.forEach(r => {
+    if (r.idx !== -1) return;
+    const normSchema = normalize(r.col.name);
+    const idx = headers.findIndex((h, i) => !used.has(i) && normalize(h) === normSchema);
+    if (idx !== -1) { r.idx = idx; r.how = 'Similar name match'; used.add(idx); }
+  });
+
+  // 3. Position fallback — same column index, only for what's still unmatched
+  results.forEach((r, si) => {
+    if (r.idx !== -1) return;
+    if (si < headers.length && !used.has(si)) { r.idx = si; r.how = 'Position match'; used.add(si); }
+  });
+
+  return results.map(r => ({
+    schemaName: r.col.name,
+    schemaLabel: r.col.label,
+    required: r.col.required,
+    fileCol: r.idx !== -1 ? headers[r.idx] : null,
+    fileIdx: r.idx,
+    how: r.idx !== -1 ? r.how : null,
+    matched: r.idx !== -1,
+  }));
 }
 
 /* ══════════════════════════════════════════════════
@@ -613,6 +637,7 @@ function matchColumns(schema, headers) {
    few realistic issues for AI Review to resolve)
 ═══════════════════════════════════════════════════ */
 function schemaTypeOf(col) {
+  if (col.label === 'DECIMAL(30,0)') return 'integer'; // account numbers — whole digits only
   if (/^DATE/i.test(col.label)) return 'date';
   if (/^DECIMAL/i.test(col.label)) return 'decimal2';
   if (/^INTEGER/i.test(col.label)) return 'integer';
@@ -625,47 +650,57 @@ const TYPE_CHECK = {
   string:   () => null,
 };
 
-// Common bank-statement header text (Indonesian & English) → canonical schema column
+// Common bank-statement header text (Indonesian & English) → canonical schema column,
+// for the columns that appear directly as a table header in the PDF.
 const BANK_HEADER_ALIASES = {
-  tanggal:'book_date', tanggaltransaksi:'book_date', transactiondate:'book_date', date:'book_date', valuedate:'book_date', bookdate:'book_date', tanggalpembukuan:'book_date',
+  tanggal:'book_date', tanggaltransaksi:'book_date', transactiondate:'book_date', date:'book_date', bookdate:'book_date', tanggalpembukuan:'book_date',
   keterangan:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', description:'transaction_details', transactiondetails:'transaction_details', remark:'transaction_details', remarks:'transaction_details',
   mutasi:'lcy_amount', amount:'lcy_amount', jumlah:'lcy_amount', nominal:'lcy_amount',
   saldo:'lcy_closing_book_balance', balance:'lcy_closing_book_balance', runningbalance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance',
 };
+const PDF_HEADER_MATCHED_FIELDS = ['book_date', 'transaction_details', 'lcy_amount', 'lcy_closing_book_balance'];
 
-// Recognize each schema column against the statement's own header row
-// (debit_credit has no header of its own — it's derived from the Mutasi value).
 function rawNormalize(s) {
-  return s.toLowerCase().replace(/[\s_\-\.]+/g, '');
+  return s.toLowerCase().replace(/[\s_\-\.\/]+/g, '');
 }
 
+// Schema columns fall into two groups: some are recognized directly against the
+// PDF's own table header row (real alias matching, same idea as CSV column mapping);
+// the rest are statement-level metadata, derived values, or simply unavailable in a
+// manual PDF — those are classified explicitly rather than "matched" per se.
 function matchPdfHeaders(headers) {
   const used = new Set();
+  const meta = (col, how) => ({ schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how, matched: true });
+  const none = (col) => ({ schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how: null, matched: false });
+
   return SCHEMA.map(col => {
-    if (col.name === 'debit_credit') {
-      return { schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how: 'Derived from Mutasi (DB suffix)', matched: true };
+    if (PDF_HEADER_MATCHED_FIELDS.includes(col.name)) {
+      const idx = headers.findIndex((h, i) => !used.has(i) && BANK_HEADER_ALIASES[rawNormalize(h)] === col.name);
+      if (idx !== -1) used.add(idx);
+      return { schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: idx !== -1 ? headers[idx] : null, how: idx !== -1 ? 'Recognized from PDF column header' : null, matched: idx !== -1 };
     }
-    const idx = headers.findIndex((h, i) => !used.has(i) && BANK_HEADER_ALIASES[rawNormalize(h)] === col.name);
-    if (idx !== -1) used.add(idx);
-    return {
-      schemaName: col.name,
-      schemaLabel: col.label,
-      required: col.required,
-      pdfHeader: idx !== -1 ? headers[idx] : null,
-      how: idx !== -1 ? 'Recognized from PDF column header' : null,
-      matched: idx !== -1,
-    };
+    switch (col.name) {
+      case 'account_currency':           return meta(col, 'Recognized from the statement header (Mata Uang).');
+      case 'account_number':             return meta(col, 'Recognized from the statement header (No. Rekening).');
+      case 'source_file':                return meta(col, 'Filled from the uploaded file name.');
+      case 'statement_date':             return meta(col, 'Recognized from the statement header (Periode).');
+      case 'value_date':                 return meta(col, 'Mirrored from book_date — the statement prints a single date per line.');
+      case 'debit_credit':               return meta(col, 'Derived from Mutasi, or from the change in running balance when Mutasi can’t be read.');
+      case 'lcy_opening_book_balance':   return meta(col, 'Recognized from the statement’s declared opening balance (Saldo Awal).');
+      case 'extra_info':                 return meta(col, 'Filled with the line’s running balance reading, for audit.');
+      default:                           return none(col); // statement_id, transaction_reference_number — no source in a manual PDF
+    }
   });
 }
 
 // Bank statements typically print Indonesian-formatted numbers (dot = thousands, comma = decimal)
-// and a trailing "DB" marker for debit rows — parse both into schema-shaped values.
+// and a trailing "DB" marker for debit rows — parse both into a numeric value.
 function parseIndoAmount(raw) {
   const s = String(raw).trim();
   const isDebit = /\bDB\b/i.test(s);
   const numeric = s.replace(/\bDB\b/i, '').trim().replace(/\./g, '').replace(',', '.');
   const n = parseFloat(numeric);
-  return { value: isNaN(n) ? null : n.toFixed(2), isDebit };
+  return { value: isNaN(n) ? null : n, isDebit };
 }
 
 // Statement dates are printed as DD/MM without a year — combine with the
@@ -673,70 +708,137 @@ function parseIndoAmount(raw) {
 function parseIndoDate(raw, periodYearMonth) {
   const m = String(raw).trim().match(/^(\d{1,2})\/(\d{1,2})$/);
   if (!m) return null;
-  const [, dd, mm] = m;
+  const [, dd] = m;
   return `${periodYearMonth}-${dd.padStart(2, '0')}`;
 }
 
+function fillIssue(rowNum, colName, value, reason) {
+  return { row: rowNum, col: colName, original: null, fixed: value, canFix: true, reason };
+}
+
 const STATEMENT_PERIOD = '2026-05'; // "PERIODE: MEI 2026" printed on the statement
+const PDF_STATEMENT_META = { account_currency: 'IDR', account_number: '5170384719', statement_date: `${STATEMENT_PERIOD}-31` };
+const PDF_OPENING_BALANCE_RAW = '1.000.000,00'; // the statement's declared "SALDO AWAL", before any transaction
 
 // Recognized PDF header row, and the raw cell text under each — standing in for
 // what an OCR/AI pass over a bank statement PDF (e.g. the BCA example) would read.
+// Row 2 has an unreadable Mutasi (recovered from the balance change); row 3 has an
+// unreadable Saldo (recovered by carrying the balance forward from Mutasi); row 4
+// has neither readable, so it still needs the user's manual input.
 const PDF_RECOGNIZED_HEADERS = ['TANGGAL', 'KETERANGAN', 'MUTASI', 'SALDO'];
 const PDF_EXTRACTION_SAMPLE = [
-  { TANGGAL: '02/05', KETERANGAN: 'TRSF E-BANKING CR 0205/FTSCY/WS95051',            MUTASI: '300.000,00',    SALDO: '2.079.000,00' },
-  { TANGGAL: '06/05', KETERANGAN: 'TARIKAN ATM 06/05',                               MUTASI: '500.000,00 DB', SALDO: null           },
-  { TANGGAL: '13/05', KETERANGAN: 'TRSF E-BANKING CR 1305/ACSCY/0000100',            MUTASI: '240.000,00',    SALDO: '5.269.000,00' },
+  { TANGGAL: '02/05', KETERANGAN: 'TRSF E-BANKING CR 0205/FTSCY/WS95051', MUTASI: '200.000,00',    SALDO: '1.200.000,00' },
+  { TANGGAL: '06/05', KETERANGAN: 'TARIKAN ATM 06/05',                    MUTASI: null,             SALDO: '700.000,00'   },
+  { TANGGAL: '13/05', KETERANGAN: 'BIAYA ADMIN BULANAN',                  MUTASI: '150.000,00 DB',  SALDO: null           },
+  { TANGGAL: '20/05', KETERANGAN: 'TRANSFER MASUK',                       MUTASI: null,             SALDO: null           },
 ];
 
 function simulatePdfExtraction() {
   const colMatches = matchPdfHeaders(PDF_RECOGNIZED_HEADERS);
   const rows = [];
   const issues = [];
+  const sourceFile = _pendingFile ? _pendingFile.name : 'statement.pdf';
+  const openingBalance = parseIndoAmount(PDF_OPENING_BALANCE_RAW).value;
+
+  let prevBalance = openingBalance; // running balance carried line-to-line, used to reconcile gaps
 
   PDF_EXTRACTION_SAMPLE.forEach((raw, ri) => {
     const rowNum = ri + 1;
     const row = {};
 
-    // book_date — parsed from the recognized TANGGAL column using the statement period
-    const rawDate = raw.TANGGAL;
-    const parsedDate = rawDate ? parseIndoDate(rawDate, STATEMENT_PERIOD) : null;
+    // Statement-level metadata — same on every row, always resolvable
+    row.account_currency = PDF_STATEMENT_META.account_currency;
+    issues.push(fillIssue(rowNum, 'account_currency', row.account_currency, 'Recognized from the statement header (Mata Uang).'));
+    row.account_number = PDF_STATEMENT_META.account_number;
+    issues.push(fillIssue(rowNum, 'account_number', row.account_number, 'Recognized from the statement header (No. Rekening).'));
+    row.statement_date = PDF_STATEMENT_META.statement_date;
+    issues.push(fillIssue(rowNum, 'statement_date', row.statement_date, 'Recognized from the statement header (Periode).'));
+    row.source_file = sourceFile;
+    issues.push(fillIssue(rowNum, 'source_file', row.source_file, 'Filled from the uploaded file name.'));
+    row.lcy_opening_book_balance = openingBalance.toFixed(2);
+    issues.push(fillIssue(rowNum, 'lcy_opening_book_balance', row.lcy_opening_book_balance, 'Recognized from the statement’s declared opening balance (Saldo Awal).'));
+
+    // Optional — no source in a manual PDF
+    row.statement_id = null;
+    row.transaction_reference_number = null;
+
+    // book_date / value_date — parsed from TANGGAL using the statement period
+    const parsedDate = raw.TANGGAL ? parseIndoDate(raw.TANGGAL, STATEMENT_PERIOD) : null;
     if (!parsedDate) {
       row.book_date = null;
-      issues.push({ row: rowNum, col: 'book_date', original: rawDate ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the transaction date manually.' });
+      row.value_date = null;
+      issues.push({ row: rowNum, col: 'book_date', original: raw.TANGGAL ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the transaction date manually.' });
+      issues.push({ row: rowNum, col: 'value_date', original: raw.TANGGAL ?? null, fixed: null, canFix: false, reason: 'Depends on the transaction date — enter it first.' });
     } else {
       row.book_date = parsedDate;
-      issues.push({ row: rowNum, col: 'book_date', original: rawDate, fixed: parsedDate, canFix: true, reason: `Parsed "${rawDate}" using the statement period (${STATEMENT_PERIOD}) and formatted as YYYY-MM-DD.` });
+      row.value_date = parsedDate;
+      issues.push({ row: rowNum, col: 'book_date', original: raw.TANGGAL, fixed: parsedDate, canFix: true, reason: `Parsed "${raw.TANGGAL}" using the statement period (${STATEMENT_PERIOD}) and formatted as YYYY-MM-DD.` });
+      issues.push(fillIssue(rowNum, 'value_date', parsedDate, 'Mirrored from book_date — the statement prints a single date per line.'));
     }
 
     // transaction_details — passed through as-is (optional, free text)
     row.transaction_details = raw.KETERANGAN || null;
 
-    // lcy_amount + debit_credit — both derived from the Mutasi column
-    const parsedAmount = raw.MUTASI ? parseIndoAmount(raw.MUTASI) : null;
-    if (!parsedAmount || parsedAmount.value === null) {
-      row.lcy_amount = null;
-      row.debit_credit = null;
-      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the amount manually.' });
-      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: null, canFix: false, reason: 'Depends on Mutasi — enter the amount first.' });
-    } else {
-      row.lcy_amount = parsedAmount.value;
-      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI, fixed: parsedAmount.value, canFix: true, reason: `Converted "${raw.MUTASI}" from Indonesian number format (dot = thousands, comma = decimal).` });
+    // debit_credit + lcy_amount + running balance — reconciled from whichever of
+    // Mutasi / Saldo is readable; each line's balance = previous balance ± its amount.
+    const parsedAmount  = raw.MUTASI ? parseIndoAmount(raw.MUTASI) : null;
+    const parsedBalance = raw.SALDO ? parseIndoAmount(raw.SALDO).value : null;
+
+    if (parsedAmount && parsedAmount.value !== null) {
+      // Mutasi is readable — use it directly; derive the running balance forward if Saldo wasn't readable
+      const amountStr = parsedAmount.value.toFixed(2);
+      row.lcy_amount = amountStr;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI, fixed: amountStr, canFix: true, reason: `Converted "${raw.MUTASI}" from Indonesian number format (dot = thousands, comma = decimal).` });
       const drCr = parsedAmount.isDebit ? 'Debit' : 'Credit';
       row.debit_credit = drCr;
       issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: drCr, canFix: true, reason: `Inferred from Mutasi — ${parsedAmount.isDebit ? '"DB" suffix present' : 'no "DB" suffix'} on "${raw.MUTASI}".` });
-    }
 
-    // lcy_closing_book_balance — parsed from the recognized SALDO column
-    if (!raw.SALDO) {
-      row.lcy_closing_book_balance = null;
-      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: null, fixed: null, canFix: false, reason: 'Could not be read from the PDF (smudged or cut off) — please enter the closing balance manually.' });
+      const signedAmount = parsedAmount.isDebit ? -parsedAmount.value : parsedAmount.value;
+      const runningBalance = parsedBalance !== null ? parsedBalance : (prevBalance !== null ? prevBalance + signedAmount : null);
+      if (runningBalance !== null) {
+        row.extra_info = JSON.stringify({ line_balance: runningBalance.toFixed(2) });
+        issues.push(fillIssue(rowNum, 'extra_info', row.extra_info, parsedBalance !== null ? 'Filled with the line’s running balance reading, for audit.' : 'Running balance carried forward from Mutasi — Saldo could not be read on this line.'));
+      } else {
+        row.extra_info = null;
+      }
+      prevBalance = runningBalance;
+
+    } else if (parsedBalance !== null && prevBalance !== null) {
+      // Mutasi unreadable, but Saldo is — reconcile the missing amount/debit_credit from the balance change
+      const delta = +(parsedBalance - prevBalance).toFixed(2);
+      const amountStr = Math.abs(delta).toFixed(2);
+      const drCr = delta >= 0 ? 'Credit' : 'Debit';
+      row.lcy_amount = amountStr;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: null, fixed: amountStr, canFix: true, reason: `Mutasi could not be read — derived from the change in running balance (${prevBalance.toFixed(2)} → ${parsedBalance.toFixed(2)}).` });
+      row.debit_credit = drCr;
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: drCr, canFix: true, reason: 'Mutasi could not be read — derived from the direction of the balance change.' });
+      row.extra_info = JSON.stringify({ line_balance: parsedBalance.toFixed(2) });
+      issues.push(fillIssue(rowNum, 'extra_info', row.extra_info, 'Filled with the line’s running balance reading, for audit.'));
+      prevBalance = parsedBalance;
+
     } else {
-      const parsedBalance = parseIndoAmount(raw.SALDO).value;
-      row.lcy_closing_book_balance = parsedBalance;
-      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: raw.SALDO, fixed: parsedBalance, canFix: true, reason: `Converted "${raw.SALDO}" from Indonesian number format (dot = thousands, comma = decimal).` });
+      // Neither Mutasi nor Saldo readable (and no prior balance to reconcile from) — genuine manual gap
+      row.lcy_amount = null;
+      row.debit_credit = null;
+      row.extra_info = null;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF, and the running balance is also unreadable on this line — please enter the amount manually.' });
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: null, canFix: false, reason: 'Depends on the amount — enter it first.' });
+      prevBalance = null; // the balance chain breaks here until the user fixes this line
     }
 
     rows.push(row);
+  });
+
+  // lcy_closing_book_balance — the running balance after the last transaction, applied to every row
+  rows.forEach((row, ri) => {
+    const rowNum = ri + 1;
+    if (prevBalance !== null) {
+      row.lcy_closing_book_balance = prevBalance.toFixed(2);
+      issues.push(fillIssue(rowNum, 'lcy_closing_book_balance', row.lcy_closing_book_balance, 'Computed as the running balance after the last transaction.'));
+    } else {
+      row.lcy_closing_book_balance = null;
+      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: null, fixed: null, canFix: false, reason: 'The running balance could not be reconciled through to the end of the statement — please confirm the closing balance manually.' });
+    }
   });
 
   return { rows, issues, colMatches };
@@ -982,7 +1084,7 @@ function confirm(body, foot) {
 }
 
 function buildPdfSchemaSection() {
-  const recognizedCount = pdfColMatches.filter(m => m.matched && m.pdfHeader).length;
+  const recognizedCount = pdfColMatches.filter(m => m.matched).length;
   let rows = '';
   SCHEMA.forEach(col => {
     const match = pdfColMatches.find(m => m.schemaName === col.name);
@@ -1020,7 +1122,7 @@ function buildPdfSchemaSection() {
     <div class="schema-section">
       <div class="schema-toggle" onclick="toggleSchema(this)">
         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
-        Schema check — recognized ${recognizedCount} of ${SCHEMA.length} column(s) from the PDF
+        Schema check — resolved ${recognizedCount} of ${SCHEMA.length} column(s) from the PDF
       </div>
       <div class="schema-body" id="schema-body">${rows}</div>
     </div>`;
@@ -1196,10 +1298,11 @@ function doPdfSubmit() {
 ═══════════════════════════════════════════════════ */
 
 // Simulated "current" data already in the system (the summary table rows)
+// account_currency, account_number, source_file, statement_id, transaction_details, transaction_reference_number, statement_date, value_date, book_date, debit_credit, lcy_amount, lcy_opening_book_balance, lcy_closing_book_balance, extra_info
 const EXISTING_ROWS = [
-  ['2026-05-02', 'TRSF E-BANKING CR 0205/FTSCY/WS95051', 'Credit', '300000.00', '2079000.00'],
-  ['2026-05-06', 'TARIKAN ATM 06/05',                     'Debit',  '500000.00', '4929000.00'],
-  ['2026-05-13', 'TRSF E-BANKING CR 1305/ACSCY/0000100',  'Credit', '240000.00', '5269000.00'],
+  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'TRSF E-BANKING CR 0205/FTSCY/WS95051', '', '2026-05-31', '2026-05-02', '2026-05-02', 'Credit', '200000.00', '1000000.00', '550000.00', '{"line_balance":"1200000.00"}'],
+  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'TARIKAN ATM 06/05',                     '', '2026-05-31', '2026-05-06', '2026-05-06', 'Debit',  '500000.00', '1000000.00', '550000.00', '{"line_balance":"700000.00"}'],
+  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'BIAYA ADMIN BULANAN',                   '', '2026-05-31', '2026-05-13', '2026-05-13', 'Debit',  '150000.00', '1000000.00', '550000.00', '{"line_balance":"550000.00"}'],
 ];
 
 function preview(body, foot) {
@@ -1331,7 +1434,7 @@ function openSchemaModal() {
   // Seed pCols from current SCHEMA so user edits the live schema
   pCols = SCHEMA.map((s, i) => makeCol({
     name: s.name,
-    type: s.label === 'INTEGER' ? 'Whole Number'
+    type: s.label === 'INTEGER' || s.label === 'DECIMAL(30,0)' ? 'Whole Number'
         : s.label.startsWith('DECIMAL') ? 'Decimal Number'
         : s.label === 'DATE' ? 'Date'
         : 'Text',
