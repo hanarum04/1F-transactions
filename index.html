@@ -159,15 +159,10 @@
   /* Headers sticky top */
   .grid-tbl thead th { position: sticky; top: 0; z-index: 3; background: #f9fafb; padding: 8px 14px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; text-align: right; white-space: nowrap; }
   .grid-tbl thead th:first-child { text-align: center; width: 48px; }
-  /* Notes column: sticky top AND sticky right */
-  .grid-tbl thead th.col-notes { position: sticky; top: 0; right: 0; z-index: 4; text-align: left; background: #f3f4f6; border-right: none; border-left: 2px solid #e5e7eb; min-width: 220px; max-width: 280px; }
 
   .grid-tbl tbody td { padding: 0; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #e5e7eb; vertical-align: middle; height: 38px; }
   .grid-tbl tbody tr:last-child td { border-bottom: none; }
   .grid-tbl tbody tr:hover td { background: #fafafa; }
-  /* Notes column sticky right */
-  .grid-tbl tbody td.col-notes { position: sticky; right: 0; background: #fafafa; border-right: none; border-left: 2px solid #e5e7eb; padding: 6px 12px; vertical-align: top; height: auto; min-height: 38px; }
-  .grid-tbl tbody tr:hover td.col-notes { background: #f3f4f6; }
 
   /* Row number */
   .grid-rn { text-align: center; color: #9ca3af; font-size: 11px; padding: 0 10px; font-variant-numeric: tabular-nums; }
@@ -189,12 +184,6 @@
   .cell-err-tip { display: none; position: absolute; bottom: calc(100% + 4px); left: 14px; background: #1f2937; color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 4px; white-space: nowrap; z-index: 20; pointer-events: none; }
   .cell-err-tip::after { content: ''; position: absolute; top: 100%; left: 12px; border: 4px solid transparent; border-top-color: #1f2937; }
   .cell-input.has-error:focus ~ .cell-err-tip { display: block; }
-
-  /* Notes in sticky column */
-  .note-line { font-size: 11px; color: #6b7280; line-height: 1.5; display: flex; gap: 5px; align-items: flex-start; margin-bottom: 2px; }
-  .note-line:last-child { margin-bottom: 0; }
-  .note-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-  .nd-red { background: #ef4444; } .nd-yellow { background: #f59e0b; }
 
   /* Value display helpers */
   code { font-family: monospace; font-size: 11px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
@@ -976,17 +965,7 @@ function doSubmit() {
    STEP: CONFIRM  (PDF flow — AI-extracted data, review & edit)
 ═══════════════════════════════════════════════════ */
 function confirm(body, foot) {
-  const auto   = pdfIssues.filter(x => x.canFix);
-  const manual = pdfIssues.filter(x => !x.canFix);
-
   body.insertAdjacentHTML('beforeend', `
-    <div class="info-bar">
-      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <span>AI applied <strong>${auto.length} correction(s)</strong> automatically.
-        ${manual.length ? `Fill in the <strong>${manual.length} highlighted cell(s)</strong> — values are validated against the schema before submitting.` : 'All extracted values are valid.'}
-      </span>
-    </div>
-
     ${buildPdfSchemaSection()}
 
     <div class="sh" style="margin-bottom:8px;">Edit corrections inline</div>
@@ -1101,13 +1080,6 @@ function buildPdfGrid() {
       cells += '</td>';
     });
 
-    let notes = '';
-    rowIssues.forEach(iss => {
-      const dotCls = iss.canFix ? 'nd-yellow' : 'nd-red';
-      notes += `<div class="note-line"><div class="note-dot ${dotCls}"></div><span><strong>${iss.col}:</strong> ${iss.reason}</span></div>`;
-    });
-
-    cells += `<td class="col-notes">${notes}</td>`;
     bodyRows += `<tr>${cells}</tr>`;
   });
 
@@ -1115,7 +1087,7 @@ function buildPdfGrid() {
     <div class="grid-outer" id="grid-outer">
       <div class="grid-scroll" id="grid-scroll">
         <table class="grid-tbl">
-          <thead><tr>${headerCells}<th class="col-notes">Notes</th></tr></thead>
+          <thead><tr>${headerCells}</tr></thead>
           <tbody>${bodyRows}</tbody>
         </table>
       </div>
