@@ -455,8 +455,6 @@
             <div class="icon-row">
               <!-- Table settings -->
               <button class="icon-btn" title="Table settings" onclick="openSchemaModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="m14.3 19.6 1-.4"/><path d="M15 3v7.5"/><path d="m15.2 16.9-.9-.3"/><path d="m16.6 21.7.3-.9"/><path d="m16.8 15.3-.4-1"/><path d="m19.1 15.2.3-.9"/><path d="m19.6 21.7-.4-1"/><path d="m20.7 16.8 1-.4"/><path d="m21.7 19.4-.9-.3"/><path d="M9 3v18"/><circle cx="18" cy="18" r="3"/></svg></button>
-              <!-- Upload -->
-              <button class="icon-btn" onclick="openModal()" title="Upload"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 8l-4-4-4 4M12 4v12"/></svg></button>
               <!-- Download -->
               <button class="icon-btn" title="Download"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4 4-4M12 4v12"/></svg></button>
               <!-- Refresh -->
@@ -472,9 +470,7 @@
               <table class="stbl" id="summary-table">
                 <thead><tr><th>account_currency</th><th>account_number</th><th>source_file</th><th>statement_id</th><th>transaction_details</th><th>transaction_reference_number</th><th>statement_date</th><th>value_date</th><th>book_date</th><th>debit_credit</th><th>lcy_amount</th><th>lcy_opening_book_balance</th><th>lcy_closing_book_balance</th><th>extra_info</th></tr></thead>
                 <tbody>
-                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>TRSF E-BANKING CR 0205/FTSCY/WS95051</td><td>—</td><td>2026-05-31</td><td>2026-05-02</td><td>2026-05-02</td><td>Credit</td><td>200000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"1200000.00"}</td></tr>
-                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>TARIKAN ATM 06/05</td><td>—</td><td>2026-05-31</td><td>2026-05-06</td><td>2026-05-06</td><td>Debit</td><td>500000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"700000.00"}</td></tr>
-                  <tr><td>IDR</td><td>5170384719</td><td>bank_statement_may.pdf</td><td>—</td><td>BIAYA ADMIN BULANAN</td><td>—</td><td>2026-05-31</td><td>2026-05-13</td><td>2026-05-13</td><td>Debit</td><td>150000.00</td><td>1000000.00</td><td>550000.00</td><td>{"line_balance":"550000.00"}</td></tr>
+                  <tr><td colspan="14" style="color:#9ca3af;font-size:12px;text-align:center;padding:16px;">Upload data to populate the table.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1316,13 +1312,9 @@ function doPdfSubmit() {
    STEP: PREVIEW
 ═══════════════════════════════════════════════════ */
 
-// Simulated "current" data already in the system (the summary table rows)
-// account_currency, account_number, source_file, statement_id, transaction_details, transaction_reference_number, statement_date, value_date, book_date, debit_credit, lcy_amount, lcy_opening_book_balance, lcy_closing_book_balance, extra_info
-const EXISTING_ROWS = [
-  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'TRSF E-BANKING CR 0205/FTSCY/WS95051', '', '2026-05-31', '2026-05-02', '2026-05-02', 'Credit', '200000.00', '1000000.00', '550000.00', '{"line_balance":"1200000.00"}'],
-  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'TARIKAN ATM 06/05',                     '', '2026-05-31', '2026-05-06', '2026-05-06', 'Debit',  '500000.00', '1000000.00', '550000.00', '{"line_balance":"700000.00"}'],
-  ['IDR', '5170384719', 'bank_statement_may.pdf', '', 'BIAYA ADMIN BULANAN',                   '', '2026-05-31', '2026-05-13', '2026-05-13', 'Debit',  '150000.00', '1000000.00', '550000.00', '{"line_balance":"550000.00"}'],
-];
+// Simulated "current" data already in the system (the summary table rows) —
+// empty for now since the Entries Table has no data source uploaded yet.
+const EXISTING_ROWS = [];
 
 function preview(body, foot) {
   // Build diff: existing rows as "delete", new uploaded rows as "insert"
