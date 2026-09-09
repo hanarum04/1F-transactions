@@ -107,11 +107,15 @@
   .wf-line { flex: 1; height: 2px; background: #e5e7eb; margin: 0 14px; min-width: 24px; }
   .wf-line.done { background: #1d4ed8; }
   .wf-chip { width: 22px; height: 22px; border-radius: 50%; background: #e5e7eb; color: #6b7280; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .wf-chip-active { background: #dbeafe; color: #1d4ed8; }
+  .wf-chip-more { font-size: 12px; color: #9ca3af; margin-left: 2px; }
   .wf-mini { color: #9ca3af; display: flex; align-items: center; }
   .wf-info { display: flex; align-items: flex-start; gap: 10px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 8px; padding: 10px 12px; margin: 14px 0 4px; max-width: 340px; }
   .wf-info-icon { width: 20px; height: 20px; border-radius: 50%; background: #1d4ed8; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; font-style: italic; flex-shrink: 0; }
   .wf-info-title { font-weight: 600; font-size: 13px; color: #1e40af; }
   .wf-info-sub { font-size: 12px; color: #3b82f6; margin-top: 1px; }
+  .detail-label { font-size: 13px; color: #9ca3af; margin-bottom: 6px; }
+  .detail-value { font-size: 14px; color: #111827; }
 
   /* ── Upload zone ── */
   .upload-zone { border: 1.5px dashed #d1d5db; border-radius: 8px; padding: 44px 24px; text-align: center; cursor: pointer; display: block; width: 100%; transition: border-color .15s; }
@@ -159,15 +163,10 @@
   /* Headers sticky top */
   .grid-tbl thead th { position: sticky; top: 0; z-index: 3; background: #f9fafb; padding: 8px 14px; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; text-align: right; white-space: nowrap; }
   .grid-tbl thead th:first-child { text-align: center; width: 48px; }
-  /* Notes column: sticky top AND sticky right */
-  .grid-tbl thead th.col-notes { position: sticky; top: 0; right: 0; z-index: 4; text-align: left; background: #f3f4f6; border-right: none; border-left: 2px solid #e5e7eb; min-width: 220px; max-width: 280px; }
 
   .grid-tbl tbody td { padding: 0; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #e5e7eb; vertical-align: middle; height: 38px; }
   .grid-tbl tbody tr:last-child td { border-bottom: none; }
   .grid-tbl tbody tr:hover td { background: #fafafa; }
-  /* Notes column sticky right */
-  .grid-tbl tbody td.col-notes { position: sticky; right: 0; background: #fafafa; border-right: none; border-left: 2px solid #e5e7eb; padding: 6px 12px; vertical-align: top; height: auto; min-height: 38px; }
-  .grid-tbl tbody tr:hover td.col-notes { background: #f3f4f6; }
 
   /* Row number */
   .grid-rn { text-align: center; color: #9ca3af; font-size: 11px; padding: 0 10px; font-variant-numeric: tabular-nums; }
@@ -189,12 +188,6 @@
   .cell-err-tip { display: none; position: absolute; bottom: calc(100% + 4px); left: 14px; background: #1f2937; color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 4px; white-space: nowrap; z-index: 20; pointer-events: none; }
   .cell-err-tip::after { content: ''; position: absolute; top: 100%; left: 12px; border: 4px solid transparent; border-top-color: #1f2937; }
   .cell-input.has-error:focus ~ .cell-err-tip { display: block; }
-
-  /* Notes in sticky column */
-  .note-line { font-size: 11px; color: #6b7280; line-height: 1.5; display: flex; gap: 5px; align-items: flex-start; margin-bottom: 2px; }
-  .note-line:last-child { margin-bottom: 0; }
-  .note-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-  .nd-red { background: #ef4444; } .nd-yellow { background: #f59e0b; }
 
   /* Value display helpers */
   code { font-family: monospace; font-size: 11px; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; }
@@ -389,7 +382,7 @@
     <div class="content">
       <div class="page-panel">
         <div class="page-header">
-          <div class="page-title">DE Test NUMBER and DECIMALS <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
+          <div class="page-title">Bank Transactions <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div>
           <div class="btn-row">
               <button class="btn btn-sm"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg> Favorite</button>
               <button class="btn btn-sm" title="Copy link"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></button>
@@ -405,14 +398,16 @@
             </div>
             <div class="wf-line done"></div>
             <div class="wf-node">
-              <div class="wf-circle done"><svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
-              <div class="wf-label done">Prepared</div>
-              <div class="wf-chip" title="Prepared by">F</div>
+              <div class="wf-circle active">2</div>
+              <div class="wf-label active">Preparing</div>
+              <div class="wf-chip wf-chip-active" title="Preparer">F</div>
+              <div class="wf-chip wf-chip-active" title="Preparer">F</div>
+              <div class="wf-chip-more">+20</div>
             </div>
-            <div class="wf-line done"></div>
+            <div class="wf-line"></div>
             <div class="wf-node">
-              <div class="wf-circle active">3</div>
-              <div class="wf-label active">Reviewing</div>
+              <div class="wf-circle pending">3</div>
+              <div class="wf-label pending">Review</div>
               <div class="wf-mini" title="View approval flow"><svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M6.5 10v4a2 2 0 002 2H14"/></svg></div>
             </div>
             <div class="wf-line"></div>
@@ -421,12 +416,16 @@
               <div class="wf-label pending">Complete</div>
             </div>
           </div>
-          <div class="wf-info">
-            <div class="wf-info-icon">i</div>
-            <div>
-              <div class="wf-info-title">Review</div>
-              <div class="wf-info-sub">0 of 1 reviewers have approved</div>
+          <div class="wf-info" style="max-width:none;width:fit-content;align-items:center;gap:14px;">
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <div class="wf-info-icon">i</div>
+              <div>
+                <div class="wf-info-title">Preparer Preparing</div>
+                <div class="wf-info-sub">The transaction is being prepared</div>
+              </div>
             </div>
+            <div style="width:1px;align-self:stretch;background:#dbeafe;"></div>
+            <button class="btn btn-sm" style="border-color:#1d4ed8;color:#1d4ed8;background:#fff;white-space:nowrap;">Proceed without Data</button>
           </div>
         </div>
 
@@ -436,19 +435,26 @@
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#9ca3af;cursor:pointer"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </div>
           <div class="card-body" style="padding-top:0;">
-            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:13px;color:#374151;min-height:80px;">testing, in numbers and decimals</div>
+            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:13px;color:#374151;min-height:80px;">Monthly bank transaction entries, uploaded from statement exports (CSV/XLS) or bank statement PDFs.</div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header" style="border-bottom:none;"><div class="card-header-left"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>Summary</div></div>
+          <div class="card-header" style="border-bottom:none;"><div class="card-header-left"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>Details</div></div>
+          <div class="card-body" style="padding-top:0;">
+            <div class="detail-label">Supporting Documents</div>
+            <div class="detail-value" style="margin-bottom:20px;">No supporting documents uploaded</div>
+
+            <div class="detail-label">Entries Table</div>
+          </div>
           <div class="table-bar">
-            <input type="text" placeholder="Please enter">
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;">
+              Data Source: 0 files uploaded
+              <button class="icon-btn" onclick="openModal()" title="Browse data source"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.91 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></button>
+            </div>
             <div class="icon-row">
               <!-- Table settings -->
               <button class="icon-btn" title="Table settings" onclick="openSchemaModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.5"/><path d="m14.3 19.6 1-.4"/><path d="M15 3v7.5"/><path d="m15.2 16.9-.9-.3"/><path d="m16.6 21.7.3-.9"/><path d="m16.8 15.3-.4-1"/><path d="m19.1 15.2.3-.9"/><path d="m19.6 21.7-.4-1"/><path d="m20.7 16.8 1-.4"/><path d="m21.7 19.4-.9-.3"/><path d="M9 3v18"/><circle cx="18" cy="18" r="3"/></svg></button>
-              <!-- Upload -->
-              <button class="icon-btn" onclick="openModal()" title="Upload"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 8l-4-4-4 4M12 4v12"/></svg></button>
               <!-- Download -->
               <button class="icon-btn" title="Download"><svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4 4-4M12 4v12"/></svg></button>
               <!-- Refresh -->
@@ -460,13 +466,11 @@
             </div>
           </div>
           <div class="card-body" style="padding-top:0;">
-            <div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden;">
+            <div style="border:1px solid #e5e7eb;border-radius:6px;overflow-x:auto;overflow-y:hidden;">
               <table class="stbl" id="summary-table">
-                <thead><tr><th>number</th><th>decimal</th></tr></thead>
+                <thead><tr><th>account_currency</th><th>account_number</th><th>source_file</th><th>statement_id</th><th>transaction_details</th><th>transaction_reference_number</th><th>statement_date</th><th>value_date</th><th>book_date</th><th>debit_credit</th><th>lcy_amount</th><th>lcy_opening_book_balance</th><th>lcy_closing_book_balance</th><th>extra_info</th></tr></thead>
                 <tbody>
-                  <tr><td>1234</td><td>1443.98</td></tr>
-                  <tr><td>15000</td><td>122.25</td></tr>
-                  <tr><td>9999999</td><td>3654.12</td></tr>
+                  <tr><td colspan="14" style="color:#9ca3af;font-size:12px;text-align:center;padding:16px;">Upload data to populate the table.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -517,10 +521,24 @@
 <script>
 /* ══════════════════════════════════════════════════
    SCHEMA  (column names + required flag only)
+   Based on the proposed bank-transaction schema —
+   see "Manual Bank Statement.xlsx" (dwd_bank_txns_di)
 ═══════════════════════════════════════════════════ */
 const SCHEMA = [
-  { name: 'number',  label: 'INTEGER',    required: true  },
-  { name: 'decimal', label: 'DECIMAL(2)', required: false },
+  { name: 'account_currency',             required: true  , label: 'STRING'         },
+  { name: 'account_number',               required: true  , label: 'DECIMAL(30,0)'  },
+  { name: 'source_file',                  required: false , label: 'STRING'         },
+  { name: 'statement_id',                 required: false , label: 'STRING'         },
+  { name: 'transaction_details',          required: false , label: 'STRING'         },
+  { name: 'transaction_reference_number', required: false , label: 'STRING'         },
+  { name: 'statement_date',               required: true  , label: 'DATE'           },
+  { name: 'value_date',                   required: true  , label: 'DATE'           },
+  { name: 'book_date',                    required: true  , label: 'DATE'           },
+  { name: 'debit_credit',                 required: true  , label: 'STRING'         },
+  { name: 'lcy_amount',                   required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'lcy_opening_book_balance',     required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'lcy_closing_book_balance',     required: true  , label: 'DECIMAL(24,8)'  },
+  { name: 'extra_info',                   required: false , label: 'STRING'         },
 ];
 
 /* ══════════════════════════════════════════════════
@@ -532,6 +550,11 @@ let fileRows     = [];     // all data rows from uploaded file
 let colMappings  = [];     // result of matchColumns()
 let userMappings = {};     // schemaColName → chosen fileHeader (user overrides)
 let reasonForChange = '';  // user-entered reason
+let uploadFlow = 'sheet';  // 'sheet' (CSV/XLS/XLSX → column mapping) | 'pdf' (bank statement → AI review)
+let pdfIssues  = [];       // computed issues from simulated PDF extraction
+let pdfRows    = [];       // extracted rows, keyed by schema column name
+let pdfOverrides = {};     // 'row-col' → user has chosen to override an AI correction
+let pdfColMatches = [];    // schema column → recognized PDF header (matchPdfHeaders())
 
 /* ══════════════════════════════════════════════════
    FILE PARSING — headers only (SheetJS)
@@ -556,49 +579,284 @@ function parseHeaders(file, cb) {
 const ALIASES = {
   userid:'uid', user_id:'uid', user_no:'uid',
   empid:'employee_id', emp_id:'employee_id',
-  acctno:'account_number', acct_no:'account_number', account_no:'account_number',
   col:'column', num:'number', dec:'decimal', amt:'amount',
+  currency:'account_currency', ccy:'account_currency', matauang:'account_currency',
+  accountno:'account_number', acctno:'account_number', acct_no:'account_number', account_no:'account_number', norekening:'account_number', no_rekening:'account_number',
+  filename:'source_file', file:'source_file', sourcefile:'source_file',
+  statementid:'statement_id', stmtid:'statement_id',
+  description:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', keterangan:'transaction_details', details:'transaction_details',
+  reference:'transaction_reference_number', referenceno:'transaction_reference_number', refno:'transaction_reference_number', txnref:'transaction_reference_number',
+  period:'statement_date', periode:'statement_date', statementdate:'statement_date',
+  valuedate:'value_date',
+  date:'book_date', transactiondate:'book_date', txndate:'book_date', bookdate:'book_date', tanggal:'book_date', tanggaltransaksi:'book_date',
+  drcr:'debit_credit', debitcredit:'debit_credit', type:'debit_credit',
+  amount:'lcy_amount', mutasi:'lcy_amount', jumlah:'lcy_amount',
+  openingbalance:'lcy_opening_book_balance', openbalance:'lcy_opening_book_balance', saldoawal:'lcy_opening_book_balance',
+  balance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance', saldo:'lcy_closing_book_balance',
+  extrainfo:'extra_info', notes:'extra_info',
 };
 
 function normalize(s) {
-  const k = s.toLowerCase().replace(/[\s_\-\.]+/g, '');
-  return ALIASES[k] || k;
+  const k = s.toLowerCase().replace(/[\s_\-\.\/]+/g, '');
+  // Alias values are canonical schema names like "account_currency" — strip their
+  // separators too, so a header resolved through an alias compares equal to a
+  // schema name normalized directly (which never passes through the alias map).
+  return (ALIASES[k] || k).replace(/[\s_\-\.\/]+/g, '');
 }
 
 function matchColumns(schema, headers) {
   const used = new Set();
+  const results = schema.map(col => ({ col, idx: -1, how: null }));
 
-  return schema.map((col, si) => {
-    const normSchema = normalize(col.name);
+  // Each pass runs across the WHOLE schema before the next one starts, so a
+  // column with no name/alias match (and therefore only a position fallback
+  // available) never grabs a header that a later column would have matched
+  // by name — position fallback is strictly a last resort.
 
-    // 1. Exact name match (case-insensitive)
-    let idx = headers.findIndex((h, i) => !used.has(i) && h.toLowerCase() === col.name.toLowerCase());
-    let how = 'Exact name match';
-
-    // 2. Normalized / alias match
-    if (idx === -1) {
-      idx = headers.findIndex((h, i) => !used.has(i) && normalize(h) === normSchema);
-      how = 'Similar name match';
-    }
-
-    // 3. Position fallback — same column index
-    if (idx === -1 && si < headers.length && !used.has(si)) {
-      idx = si;
-      how = 'Position match';
-    }
-
-    if (idx !== -1) used.add(idx);
-
-    return {
-      schemaName: col.name,
-      schemaLabel: col.label,
-      required: col.required,
-      fileCol: idx !== -1 ? headers[idx] : null,
-      fileIdx: idx,
-      how: idx !== -1 ? how : null,
-      matched: idx !== -1,
-    };
+  // 1. Exact name match (case-insensitive)
+  results.forEach(r => {
+    const idx = headers.findIndex((h, i) => !used.has(i) && h.toLowerCase() === r.col.name.toLowerCase());
+    if (idx !== -1) { r.idx = idx; r.how = 'Exact name match'; used.add(idx); }
   });
+
+  // 2. Normalized / alias match
+  results.forEach(r => {
+    if (r.idx !== -1) return;
+    const normSchema = normalize(r.col.name);
+    const idx = headers.findIndex((h, i) => !used.has(i) && normalize(h) === normSchema);
+    if (idx !== -1) { r.idx = idx; r.how = 'Similar name match'; used.add(idx); }
+  });
+
+  // 3. Position fallback — same column index, only for what's still unmatched
+  results.forEach((r, si) => {
+    if (r.idx !== -1) return;
+    if (si < headers.length && !used.has(si)) { r.idx = si; r.how = 'Position match'; used.add(si); }
+  });
+
+  return results.map(r => ({
+    schemaName: r.col.name,
+    schemaLabel: r.col.label,
+    required: r.col.required,
+    fileCol: r.idx !== -1 ? headers[r.idx] : null,
+    fileIdx: r.idx,
+    how: r.idx !== -1 ? r.how : null,
+    matched: r.idx !== -1,
+  }));
+}
+
+/* ══════════════════════════════════════════════════
+   PDF BANK STATEMENT — SIMULATED AI EXTRACTION
+   (a real backend would OCR/parse the PDF; here we
+   simulate recognizing the statement's own column
+   headers and mapping them onto the schema, with a
+   few realistic issues for AI Review to resolve)
+═══════════════════════════════════════════════════ */
+function schemaTypeOf(col) {
+  if (col.label === 'DECIMAL(30,0)') return 'integer'; // account numbers — whole digits only
+  if (/^DATE/i.test(col.label)) return 'date';
+  if (/^DECIMAL/i.test(col.label)) return 'decimal2';
+  if (/^INTEGER/i.test(col.label)) return 'integer';
+  return 'string';
+}
+const TYPE_CHECK = {
+  integer:  v => /^\s*-?\d+\s*$/.test(String(v)) ? null : 'Must be a whole number (e.g. 42)',
+  decimal2: v => /^\s*-?\d+(\.\d{1,2})?\s*$/.test(String(v)) ? null : 'Must be a number with up to 2 decimal places (e.g. 10.00)',
+  date:     v => /^\d{4}-\d{2}-\d{2}$/.test(String(v).trim()) ? null : 'Must be a date in YYYY-MM-DD format (e.g. 2026-05-02)',
+  string:   () => null,
+};
+
+// Common bank-statement header text (Indonesian & English) → canonical schema column,
+// for the columns that appear directly as a table header in the PDF.
+const BANK_HEADER_ALIASES = {
+  tanggal:'book_date', tanggaltransaksi:'book_date', transactiondate:'book_date', date:'book_date', bookdate:'book_date', tanggalpembukuan:'book_date',
+  keterangan:'transaction_details', narasi:'transaction_details', uraian:'transaction_details', description:'transaction_details', transactiondetails:'transaction_details', remark:'transaction_details', remarks:'transaction_details',
+  mutasi:'lcy_amount', amount:'lcy_amount', jumlah:'lcy_amount', nominal:'lcy_amount',
+  saldo:'lcy_closing_book_balance', balance:'lcy_closing_book_balance', runningbalance:'lcy_closing_book_balance', closingbalance:'lcy_closing_book_balance',
+};
+const PDF_HEADER_MATCHED_FIELDS = ['book_date', 'transaction_details', 'lcy_amount', 'lcy_closing_book_balance'];
+
+function rawNormalize(s) {
+  return s.toLowerCase().replace(/[\s_\-\.\/]+/g, '');
+}
+
+// Schema columns fall into two groups: some are recognized directly against the
+// PDF's own table header row (real alias matching, same idea as CSV column mapping);
+// the rest are statement-level metadata, derived values, or simply unavailable in a
+// manual PDF — those are classified explicitly rather than "matched" per se.
+function matchPdfHeaders(headers) {
+  const used = new Set();
+  const meta = (col, how) => ({ schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how, matched: true });
+  const none = (col) => ({ schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: null, how: null, matched: false });
+
+  return SCHEMA.map(col => {
+    if (PDF_HEADER_MATCHED_FIELDS.includes(col.name)) {
+      const idx = headers.findIndex((h, i) => !used.has(i) && BANK_HEADER_ALIASES[rawNormalize(h)] === col.name);
+      if (idx !== -1) used.add(idx);
+      return { schemaName: col.name, schemaLabel: col.label, required: col.required, pdfHeader: idx !== -1 ? headers[idx] : null, how: idx !== -1 ? 'Recognized from PDF column header' : null, matched: idx !== -1 };
+    }
+    switch (col.name) {
+      case 'account_currency':           return meta(col, 'Recognized from the statement header (Mata Uang).');
+      case 'account_number':             return meta(col, 'Recognized from the statement header (No. Rekening).');
+      case 'source_file':                return meta(col, 'Filled from the uploaded file name.');
+      case 'statement_date':             return meta(col, 'Recognized from the statement header (Periode).');
+      case 'value_date':                 return meta(col, 'Mirrored from book_date — the statement prints a single date per line.');
+      case 'debit_credit':               return meta(col, 'Derived from Mutasi, or from the change in running balance when Mutasi can’t be read.');
+      case 'lcy_opening_book_balance':   return meta(col, 'Recognized from the statement’s declared opening balance (Saldo Awal).');
+      case 'extra_info':                 return meta(col, 'Filled with the line’s running balance reading, for audit.');
+      default:                           return none(col); // statement_id, transaction_reference_number — no source in a manual PDF
+    }
+  });
+}
+
+// Bank statements typically print Indonesian-formatted numbers (dot = thousands, comma = decimal)
+// and a trailing "DB" marker for debit rows — parse both into a numeric value.
+function parseIndoAmount(raw) {
+  const s = String(raw).trim();
+  const isDebit = /\bDB\b/i.test(s);
+  const numeric = s.replace(/\bDB\b/i, '').trim().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(numeric);
+  return { value: isNaN(n) ? null : n, isDebit };
+}
+
+// Statement dates are printed as DD/MM without a year — combine with the
+// statement's period (shown in its header) to produce an ISO date.
+function parseIndoDate(raw, periodYearMonth) {
+  const m = String(raw).trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (!m) return null;
+  const [, dd] = m;
+  return `${periodYearMonth}-${dd.padStart(2, '0')}`;
+}
+
+function fillIssue(rowNum, colName, value, reason) {
+  return { row: rowNum, col: colName, original: null, fixed: value, canFix: true, reason };
+}
+
+const STATEMENT_PERIOD = '2026-05'; // "PERIODE: MEI 2026" printed on the statement
+const PDF_STATEMENT_META = { account_currency: 'IDR', account_number: '5170384719', statement_date: `${STATEMENT_PERIOD}-31` };
+const PDF_OPENING_BALANCE_RAW = '1.000.000,00'; // the statement's declared "SALDO AWAL", before any transaction
+
+// Recognized PDF header row, and the raw cell text under each — standing in for
+// what an OCR/AI pass over a bank statement PDF (e.g. the BCA example) would read.
+// Row 2 has an unreadable Mutasi (recovered from the balance change); row 3 has an
+// unreadable Saldo (recovered by carrying the balance forward from Mutasi); row 4
+// has neither readable, so it still needs the user's manual input.
+const PDF_RECOGNIZED_HEADERS = ['TANGGAL', 'KETERANGAN', 'MUTASI', 'SALDO'];
+const PDF_EXTRACTION_SAMPLE = [
+  { TANGGAL: '02/05', KETERANGAN: 'TRSF E-BANKING CR 0205/FTSCY/WS95051', MUTASI: '200.000,00',    SALDO: '1.200.000,00' },
+  { TANGGAL: '06/05', KETERANGAN: 'TARIKAN ATM 06/05',                    MUTASI: null,             SALDO: '700.000,00'   },
+  { TANGGAL: '13/05', KETERANGAN: 'BIAYA ADMIN BULANAN',                  MUTASI: '150.000,00 DB',  SALDO: null           },
+  { TANGGAL: '20/05', KETERANGAN: 'TRANSFER MASUK',                       MUTASI: null,             SALDO: null           },
+];
+
+function simulatePdfExtraction() {
+  const colMatches = matchPdfHeaders(PDF_RECOGNIZED_HEADERS);
+  const rows = [];
+  const issues = [];
+  const sourceFile = _pendingFile ? _pendingFile.name : 'statement.pdf';
+  const openingBalance = parseIndoAmount(PDF_OPENING_BALANCE_RAW).value;
+
+  let prevBalance = openingBalance; // running balance carried line-to-line, used to reconcile gaps
+
+  PDF_EXTRACTION_SAMPLE.forEach((raw, ri) => {
+    const rowNum = ri + 1;
+    const row = {};
+
+    // Statement-level metadata — same on every row, always resolvable
+    row.account_currency = PDF_STATEMENT_META.account_currency;
+    issues.push(fillIssue(rowNum, 'account_currency', row.account_currency, 'Recognized from the statement header (Mata Uang).'));
+    row.account_number = PDF_STATEMENT_META.account_number;
+    issues.push(fillIssue(rowNum, 'account_number', row.account_number, 'Recognized from the statement header (No. Rekening).'));
+    row.statement_date = PDF_STATEMENT_META.statement_date;
+    issues.push(fillIssue(rowNum, 'statement_date', row.statement_date, 'Recognized from the statement header (Periode).'));
+    row.source_file = sourceFile;
+    issues.push(fillIssue(rowNum, 'source_file', row.source_file, 'Filled from the uploaded file name.'));
+    row.lcy_opening_book_balance = openingBalance.toFixed(2);
+    issues.push(fillIssue(rowNum, 'lcy_opening_book_balance', row.lcy_opening_book_balance, 'Recognized from the statement’s declared opening balance (Saldo Awal).'));
+
+    // Optional — no source in a manual PDF
+    row.statement_id = null;
+    row.transaction_reference_number = null;
+
+    // book_date / value_date — parsed from TANGGAL using the statement period
+    const parsedDate = raw.TANGGAL ? parseIndoDate(raw.TANGGAL, STATEMENT_PERIOD) : null;
+    if (!parsedDate) {
+      row.book_date = null;
+      row.value_date = null;
+      issues.push({ row: rowNum, col: 'book_date', original: raw.TANGGAL ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF — please enter the transaction date manually.' });
+      issues.push({ row: rowNum, col: 'value_date', original: raw.TANGGAL ?? null, fixed: null, canFix: false, reason: 'Depends on the transaction date — enter it first.' });
+    } else {
+      row.book_date = parsedDate;
+      row.value_date = parsedDate;
+      issues.push({ row: rowNum, col: 'book_date', original: raw.TANGGAL, fixed: parsedDate, canFix: true, reason: `Parsed "${raw.TANGGAL}" using the statement period (${STATEMENT_PERIOD}) and formatted as YYYY-MM-DD.` });
+      issues.push(fillIssue(rowNum, 'value_date', parsedDate, 'Mirrored from book_date — the statement prints a single date per line.'));
+    }
+
+    // transaction_details — passed through as-is (optional, free text)
+    row.transaction_details = raw.KETERANGAN || null;
+
+    // debit_credit + lcy_amount + running balance — reconciled from whichever of
+    // Mutasi / Saldo is readable; each line's balance = previous balance ± its amount.
+    const parsedAmount  = raw.MUTASI ? parseIndoAmount(raw.MUTASI) : null;
+    const parsedBalance = raw.SALDO ? parseIndoAmount(raw.SALDO).value : null;
+
+    if (parsedAmount && parsedAmount.value !== null) {
+      // Mutasi is readable — use it directly; derive the running balance forward if Saldo wasn't readable
+      const amountStr = parsedAmount.value.toFixed(2);
+      row.lcy_amount = amountStr;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI, fixed: amountStr, canFix: true, reason: `Converted "${raw.MUTASI}" from Indonesian number format (dot = thousands, comma = decimal).` });
+      const drCr = parsedAmount.isDebit ? 'Debit' : 'Credit';
+      row.debit_credit = drCr;
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: drCr, canFix: true, reason: `Inferred from Mutasi — ${parsedAmount.isDebit ? '"DB" suffix present' : 'no "DB" suffix'} on "${raw.MUTASI}".` });
+
+      const signedAmount = parsedAmount.isDebit ? -parsedAmount.value : parsedAmount.value;
+      const runningBalance = parsedBalance !== null ? parsedBalance : (prevBalance !== null ? prevBalance + signedAmount : null);
+      if (runningBalance !== null) {
+        row.extra_info = JSON.stringify({ line_balance: runningBalance.toFixed(2) });
+        issues.push(fillIssue(rowNum, 'extra_info', row.extra_info, parsedBalance !== null ? 'Filled with the line’s running balance reading, for audit.' : 'Running balance carried forward from Mutasi — Saldo could not be read on this line.'));
+      } else {
+        row.extra_info = null;
+      }
+      prevBalance = runningBalance;
+
+    } else if (parsedBalance !== null && prevBalance !== null) {
+      // Mutasi unreadable, but Saldo is — reconcile the missing amount/debit_credit from the balance change
+      const delta = +(parsedBalance - prevBalance).toFixed(2);
+      const amountStr = Math.abs(delta).toFixed(2);
+      const drCr = delta >= 0 ? 'Credit' : 'Debit';
+      row.lcy_amount = amountStr;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: null, fixed: amountStr, canFix: true, reason: `Mutasi could not be read — derived from the change in running balance (${prevBalance.toFixed(2)} → ${parsedBalance.toFixed(2)}).` });
+      row.debit_credit = drCr;
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: drCr, canFix: true, reason: 'Mutasi could not be read — derived from the direction of the balance change.' });
+      row.extra_info = JSON.stringify({ line_balance: parsedBalance.toFixed(2) });
+      issues.push(fillIssue(rowNum, 'extra_info', row.extra_info, 'Filled with the line’s running balance reading, for audit.'));
+      prevBalance = parsedBalance;
+
+    } else {
+      // Neither Mutasi nor Saldo readable (and no prior balance to reconcile from) — genuine manual gap
+      row.lcy_amount = null;
+      row.debit_credit = null;
+      row.extra_info = null;
+      issues.push({ row: rowNum, col: 'lcy_amount', original: raw.MUTASI ?? null, fixed: null, canFix: false, reason: 'Could not be read from the PDF, and the running balance is also unreadable on this line — please enter the amount manually.' });
+      issues.push({ row: rowNum, col: 'debit_credit', original: null, fixed: null, canFix: false, reason: 'Depends on the amount — enter it first.' });
+      prevBalance = null; // the balance chain breaks here until the user fixes this line
+    }
+
+    rows.push(row);
+  });
+
+  // lcy_closing_book_balance — the running balance after the last transaction, applied to every row
+  rows.forEach((row, ri) => {
+    const rowNum = ri + 1;
+    if (prevBalance !== null) {
+      row.lcy_closing_book_balance = prevBalance.toFixed(2);
+      issues.push(fillIssue(rowNum, 'lcy_closing_book_balance', row.lcy_closing_book_balance, 'Computed as the running balance after the last transaction.'));
+    } else {
+      row.lcy_closing_book_balance = null;
+      issues.push({ row: rowNum, col: 'lcy_closing_book_balance', original: null, fixed: null, canFix: false, reason: 'The running balance could not be reconciled through to the end of the statement — please confirm the closing balance manually.' });
+    }
+  });
+
+  return { rows, issues, colMatches };
 }
 
 /* ══════════════════════════════════════════════════
@@ -606,6 +864,7 @@ function matchColumns(schema, headers) {
 ═══════════════════════════════════════════════════ */
 function openModal() {
   step = 'upload'; fileHeaders = []; fileRows = []; colMappings = []; userMappings = {}; reasonForChange = '';
+  uploadFlow = 'sheet'; pdfIssues = []; pdfRows = []; pdfOverrides = {}; pdfColMatches = [];
   document.getElementById('modal').classList.add('open');
   render();
 }
@@ -621,17 +880,24 @@ function render() {
   const foot = document.getElementById('modal-footer');
   body.innerHTML = foot.innerHTML = '';
   body.insertAdjacentHTML('beforeend', buildStepper());
-  ({ upload, analyzing, mapping, preview, success }[step] || (()=>{}))(body, foot);
+  ({ upload, analyzing, mapping, preview, confirm, success }[step] || (()=>{}))(body, foot);
 }
 
 function buildStepper() {
-  const defs = [
+  const defs = uploadFlow === 'pdf' ? [
+    { key:'upload',    label:'Upload'     },
+    { key:'analyzing', label:'AI Review'  },
+    { key:'confirm',   label:'Confirm'    },
+    { key:'success',   label:'Submit'     },
+  ] : [
     { key:'upload',  label:'Upload'          },
     { key:'mapping', label:'Column Mapping'   },
     { key:'preview', label:'Preview'          },
     { key:'success', label:'Submit'           },
   ];
-  const order = ['upload','analyzing','mapping','preview','success'];
+  const order = uploadFlow === 'pdf'
+    ? ['upload','analyzing','confirm','success']
+    : ['upload','analyzing','mapping','preview','success'];
   const cur = order.indexOf(step);
   let h = '<div class="stepper">';
   defs.forEach((d, i) => {
@@ -654,10 +920,10 @@ function upload(body, foot) {
       <a href="#" style="font-size:12px;color:#1d4ed8;display:inline-flex;align-items:center;gap:5px;text-decoration:none;"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Download Template</a>
     </div>
     <label class="upload-zone" id="dz">
-      <input type="file" accept=".csv,.xls,.xlsx" onchange="fileChosen(this)">
+      <input type="file" accept=".csv,.xls,.xlsx,.pdf" onchange="fileChosen(this)">
       <div class="upload-zone-icon"><svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg></div>
       <div class="upload-zone-title">Upload file</div>
-      <div class="upload-zone-sub">Drag and drop or click to upload<br>Accepts CSV, XLS, XLSX files. No file size limit.</div>
+      <div class="upload-zone-sub">Drag and drop or click to upload<br>Accepts CSV, XLS, XLSX, PDF files. No file size limit.</div>
     </label>
     <div class="file-selected hidden" id="file-info">
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color:#6b7280;flex-shrink:0"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
@@ -667,7 +933,7 @@ function upload(body, foot) {
   `);
   foot.insertAdjacentHTML('beforeend', `
     <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">Submit</button>
+    <button class="btn btn-primary" id="next-btn" disabled onclick="startAnalysis()">${uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit'}</button>
   `);
   const dz = document.getElementById('dz');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
@@ -679,10 +945,13 @@ function fileChosen(inp) {
   const f = inp.files && inp.files[0];
   if (!f) return;
   _pendingFile = f;
+  uploadFlow = /\.pdf$/i.test(f.name) ? 'pdf' : 'sheet';
   document.getElementById('file-info').classList.remove('hidden');
   document.getElementById('fn').textContent = f.name;
   document.getElementById('fs').textContent = fmt(f.size);
-  document.getElementById('next-btn').disabled = false;
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.disabled = false;
+  nextBtn.textContent = uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit';
 }
 
 /* ══════════════════════════════════════════════════
@@ -690,6 +959,17 @@ function fileChosen(inp) {
 ═══════════════════════════════════════════════════ */
 function startAnalysis() {
   goStep('analyzing');
+  if (uploadFlow === 'pdf') {
+    setTimeout(() => {
+      const { rows, issues, colMatches } = simulatePdfExtraction();
+      pdfRows = rows;
+      pdfIssues = issues;
+      pdfOverrides = {};
+      pdfColMatches = colMatches;
+      goStep('confirm');
+    }, 1600);
+    return;
+  }
   if (_pendingFile) {
     parseHeaders(_pendingFile, (headers, rows) => {
       fileHeaders = headers;
@@ -703,13 +983,15 @@ function startAnalysis() {
 }
 
 function analyzing(body, foot) {
+  const title = uploadFlow === 'pdf' ? 'Reading your bank statement…' : 'Detecting columns…';
+  const sub   = uploadFlow === 'pdf' ? 'Extracting transaction data from the PDF and checking it against your schema.' : "Matching your file's columns to the schema.";
   body.insertAdjacentHTML('beforeend', `
     <div class="spinner-wrap">
       <div class="spinner"></div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Detecting columns…</div>
-      <div style="font-size:12px;color:#6b7280;">Matching your file's columns to the schema.</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${title}</div>
+      <div style="font-size:12px;color:#6b7280;">${sub}</div>
     </div>`);
-  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>Submit</button>`);
+  foot.insertAdjacentHTML('beforeend', `<button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" disabled>${uploadFlow === 'pdf' ? 'Analyse with AI' : 'Submit'}</button>`);
 }
 
 /* ══════════════════════════════════════════════════
@@ -797,15 +1079,242 @@ function doSubmit() {
 }
 
 /* ══════════════════════════════════════════════════
+   STEP: CONFIRM  (PDF flow — AI-extracted data, review & edit)
+═══════════════════════════════════════════════════ */
+function confirm(body, foot) {
+  body.insertAdjacentHTML('beforeend', `
+    ${buildPdfSchemaSection()}
+
+    <div class="sh" style="margin-bottom:8px;">Edit corrections inline</div>
+    ${buildPdfGrid()}
+  `);
+
+  foot.insertAdjacentHTML('beforeend', `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn" onclick="goStep('upload')">Back</button>
+    <button class="btn btn-primary" onclick="doPdfSubmit()">Confirm and Submit</button>
+  `);
+
+  initScrollIndicator();
+}
+
+function buildPdfSchemaSection() {
+  const recognizedCount = pdfColMatches.filter(m => m.matched).length;
+  let rows = '';
+  SCHEMA.forEach(col => {
+    const match = pdfColMatches.find(m => m.schemaName === col.name);
+    const colIssues = pdfIssues.filter(x => x.col === col.name);
+    const hasManual = colIssues.some(x => !x.canFix);
+    const indCls   = !colIssues.length ? 'ind-green' : hasManual ? 'ind-red' : 'ind-yellow';
+    const pillCls  = !colIssues.length ? 'pill-green' : hasManual ? 'pill-red' : 'pill-yellow';
+
+    const recognized = match && match.pdfHeader
+      ? `Recognized from PDF column <code>${match.pdfHeader}</code>.`
+      : match && match.matched
+        ? `${match.how}.`
+        : `<span class="err">No matching column found in the PDF.</span>`;
+
+    let detail = `${recognized}<br>`;
+    if (!colIssues.length) {
+      detail += 'All values are valid.';
+    } else {
+      const manualRows = colIssues.filter(x => !x.canFix).map(x => x.row);
+      const autoRows   = colIssues.filter(x => x.canFix).map(x => x.row);
+      if (manualRows.length) detail += `<span class="err">Row(s) ${manualRows.join(', ')}</span> could not be read from the PDF — your input is required.<br>`;
+      if (autoRows.length)   detail += `Row(s) ${autoRows.join(', ')} <span class="ok">auto-corrected by AI</span>.`;
+    }
+
+    rows += `<div class="check-row">
+      <div class="ind ${indCls}"></div>
+      <div>
+        <div class="check-col">${col.name} <span class="pill ${pillCls}">${col.label}</span></div>
+        <div class="check-detail">${detail}</div>
+      </div>
+    </div>`;
+  });
+
+  return `
+    <div class="schema-section">
+      <div class="schema-toggle" onclick="toggleSchema(this)">
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" id="schema-chevron"><path d="M9 18l6-6-6-6"/></svg>
+        Schema check — resolved ${recognizedCount} of ${SCHEMA.length} column(s) from the PDF
+      </div>
+      <div class="schema-body" id="schema-body">${rows}</div>
+    </div>`;
+}
+
+function toggleSchema(el) {
+  const body = document.getElementById('schema-body');
+  const chev = document.getElementById('schema-chevron');
+  const open = body.classList.toggle('open');
+  chev.style.transform = open ? 'rotate(90deg)' : '';
+}
+
+function buildPdfGrid() {
+  let headerCells = '<th>#</th>';
+  SCHEMA.forEach(col => { headerCells += `<th>${col.name}</th>`; });
+
+  let bodyRows = '';
+  pdfRows.forEach((row, ri) => {
+    const rn = ri + 1;
+    const rowIssues = pdfIssues.filter(x => x.row === rn);
+    let cells = `<td class="grid-rn">${rn}</td>`;
+
+    SCHEMA.forEach(col => {
+      const issue = rowIssues.find(x => x.col === col.name);
+      const key = `${rn}-${col.name}`;
+      cells += '<td>';
+      if (!issue) {
+        const v = row[col.name];
+        cells += (v === null || v === undefined || v === '')
+          ? '<div class="cell-ok cell-empty">—</div>'
+          : `<div class="cell-ok">${v}</div>`;
+      } else if (issue.canFix) {
+        const overrideVal = pdfOverrides[key];
+        if (overrideVal !== undefined) {
+          cells += buildPdfEditableCell(rn, col.name, issue, overrideVal);
+        } else if (issue.original === null || issue.original === undefined) {
+          // Derived value (e.g. debit_credit) — no "before" text to show, just the AI-filled result
+          cells += `<div class="cell-corrected">
+            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
+            <button class="cell-pencil" title="Edit AI-derived value" onclick="overridePdfCell(${rn},'${col.name}',event)">
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+          </div>`;
+        } else {
+          cells += `<div class="cell-corrected">
+            <span class="val-del" style="font-size:11px;">${issue.original}</span>
+            <span class="val-arrow">→</span>
+            <span class="val-add" style="font-size:11px;">${issue.fixed}</span>
+            <button class="cell-pencil" title="Edit AI correction" onclick="overridePdfCell(${rn},'${col.name}',event)">
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+          </div>`;
+        }
+      } else {
+        cells += buildPdfEditableCell(rn, col.name, issue, '');
+      }
+      cells += '</td>';
+    });
+
+    bodyRows += `<tr>${cells}</tr>`;
+  });
+
+  return `
+    <div class="grid-outer" id="grid-outer">
+      <div class="grid-scroll" id="grid-scroll">
+        <table class="grid-tbl">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      <div class="scroll-ind" id="scroll-ind">
+        <div class="scroll-ind-inner">
+          <div class="scroll-arr" onclick="document.getElementById('grid-scroll').scrollBy({top:100,behavior:'smooth'})">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M19 9l-7 7-7-7"/></svg>
+            More rows below
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildPdfEditableCell(rn, colName, issue, currentVal) {
+  const orig = (issue.original === null || issue.original === '') ? '' : issue.original;
+  const placeholder = orig ? `Was: ${orig}` : 'Enter value…';
+  return `<div class="cell-need-wrap">
+    <input type="text" class="cell-input" id="e-${rn}-${colName}"
+      value="${currentVal}"
+      placeholder="${placeholder}"
+      data-row="${rn}" data-col="${colName}"
+      oninput="validatePdfCell(this)" onblur="validatePdfCell(this)">
+    <div class="cell-err-tip" id="err-${rn}-${colName}"></div>
+  </div>`;
+}
+
+function overridePdfCell(row, colName, evt) {
+  evt.stopPropagation();
+  const issue = pdfIssues.find(x => x.row === row && x.col === colName);
+  if (!issue) return;
+  pdfOverrides[`${row}-${colName}`] = issue.fixed;
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  body.insertAdjacentHTML('beforeend', buildStepper());
+  confirm(body, { insertAdjacentHTML: () => {} });
+  setTimeout(() => {
+    const inp = document.getElementById(`e-${row}-${colName}`);
+    if (inp) { inp.select(); inp.focus(); }
+  }, 30);
+}
+
+function validatePdfCell(inp) {
+  const row = inp.dataset.row;
+  const colName = inp.dataset.col;
+  const val = inp.value.trim();
+  const errEl = document.getElementById(`err-${row}-${colName}`);
+  if (!val) { inp.classList.remove('has-error'); if (errEl) errEl.textContent = ''; return; }
+  const col = SCHEMA.find(c => c.name === colName);
+  const type = col ? schemaTypeOf(col) : null;
+  const msg = type && TYPE_CHECK[type] ? TYPE_CHECK[type](val) : null;
+  if (msg) {
+    inp.classList.add('has-error');
+    if (errEl) errEl.textContent = msg;
+  } else {
+    inp.classList.remove('has-error');
+    if (errEl) errEl.textContent = '';
+  }
+}
+
+function initScrollIndicator() {
+  setTimeout(() => {
+    const scr = document.getElementById('grid-scroll');
+    const ind = document.getElementById('scroll-ind');
+    if (!scr || !ind) return;
+    const update = () => ind.classList.toggle('visible', scr.scrollHeight > scr.clientHeight + scr.scrollTop + 4);
+    update();
+    scr.addEventListener('scroll', update);
+  }, 60);
+}
+
+function doPdfSubmit() {
+  let hasError = false;
+  pdfIssues.filter(x => !x.canFix).forEach(c => {
+    const inp = document.getElementById(`e-${c.row}-${c.col}`);
+    if (!inp) return;
+    validatePdfCell(inp);
+    if (inp.classList.contains('has-error')) { hasError = true; return; }
+    if (!inp.value.trim()) {
+      inp.classList.add('has-error');
+      const errEl = document.getElementById(`err-${c.row}-${c.col}`);
+      if (errEl) errEl.textContent = 'This field is required.';
+      hasError = true;
+    }
+  });
+  if (hasError) {
+    const firstErr = document.querySelector('.cell-input.has-error');
+    if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  // Resolve final values into pdfRows before the grid's DOM is torn down
+  pdfRows.forEach((row, ri) => {
+    const rn = ri + 1;
+    SCHEMA.forEach(col => {
+      const inp = document.getElementById(`e-${rn}-${col.name}`);
+      if (inp) { row[col.name] = inp.value.trim(); return; }
+      const issue = pdfIssues.find(x => x.row === rn && x.col === col.name);
+      if (issue && issue.canFix) row[col.name] = issue.fixed;
+    });
+  });
+  goStep('success');
+}
+
+/* ══════════════════════════════════════════════════
    STEP: PREVIEW
 ═══════════════════════════════════════════════════ */
 
-// Simulated "current" data already in the system (the summary table rows)
-const EXISTING_ROWS = [
-  ['1234', '1443.98'],
-  ['15000', '122.25'],
-  ['9999999', '3654.12'],
-];
+// Simulated "current" data already in the system (the summary table rows) —
+// empty for now since the Entries Table has no data source uploaded yet.
+const EXISTING_ROWS = [];
 
 function preview(body, foot) {
   // Build diff: existing rows as "delete", new uploaded rows as "insert"
@@ -936,7 +1445,10 @@ function openSchemaModal() {
   // Seed pCols from current SCHEMA so user edits the live schema
   pCols = SCHEMA.map((s, i) => makeCol({
     name: s.name,
-    type: s.label === 'INTEGER' ? 'Whole Number' : s.label.startsWith('DECIMAL') ? 'Decimal Number' : 'Text',
+    type: s.label === 'INTEGER' || s.label === 'DECIMAL(30,0)' ? 'Whole Number'
+        : s.label.startsWith('DECIMAL') ? 'Decimal Number'
+        : s.label === 'DATE' ? 'Date'
+        : 'Text',
     isMandatory: s.required,
     showInSummary: true,
     isKey: i === 0, // first column is key by default
@@ -970,7 +1482,9 @@ function saveSchemaSettings() {
   SCHEMA.length = 0;
   pCols.forEach(col => {
     const label = col.type === 'Whole Number' ? 'INTEGER'
-                : col.type === 'Decimal Number' ? 'DECIMAL(2)'
+                : col.type === 'Decimal Number' ? 'DECIMAL(24,8)'
+                : col.type === 'Date' ? 'DATE'
+                : col.type === 'Text' ? 'STRING'
                 : col.type.toUpperCase();
     SCHEMA.push({ name: col.name, label, required: col.isMandatory });
   });
@@ -1344,6 +1858,26 @@ function renderPStep3(body, foot) {
    STEP: SUCCESS
 ═══════════════════════════════════════════════════ */
 function success(body, foot) {
+  if (uploadFlow === 'pdf') {
+    const rowSummary = pdfRows.map(row => {
+      const cells = SCHEMA.map(col => row[col.name] || '—');
+      return `<tr>${cells.map(v => `<td style="padding:6px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;color:#374151;">${v}</td>`).join('')}</tr>`;
+    }).join('');
+
+    body.insertAdjacentHTML('beforeend', `
+      <div class="success-wrap">
+        <div class="success-ring"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#16a34a"><path d="M5 13l4 4L19 7"/></svg></div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Upload successful</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Data extracted from your PDF was confirmed and submitted successfully.</div>
+        <table style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;text-align:left;min-width:280px;">
+          <thead><tr style="background:#f9fafb;">${SCHEMA.map(col => `<th style="padding:7px 12px;font-size:11px;font-weight:600;color:#6b7280;border-bottom:1px solid #e5e7eb;">${col.name}</th>`).join('')}</tr></thead>
+          <tbody>${rowSummary}</tbody>
+        </table>
+      </div>`);
+    foot.insertAdjacentHTML('beforeend', `<button class="btn btn-primary" onclick="closeModal()">Done</button>`);
+    return;
+  }
+
   const effective = colMappings.map(m => ({
     schema: m.schemaName,
     file: userMappings[m.schemaName] !== undefined ? userMappings[m.schemaName] : m.fileCol,
